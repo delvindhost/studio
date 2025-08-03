@@ -41,8 +41,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             role: userData.role || 'user',
           });
         } else {
-           // This case is handled on the login page to ensure profile exists.
-           // If it still happens, treat as not fully logged in.
+           // This can happen if the user was created in Auth but not in Firestore yet.
+           // The login page will handle creating the document. For now, treat as not fully logged in.
            setUser(null);
         }
       } else {
@@ -74,22 +74,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // onAuthStateChanged will detect user is null and the useEffect will redirect.
   };
   
-  if (loading) {
+  // While loading, or if we are about to redirect, show a loader to prevent flicker.
+  const isAuthPage = pathname === '/login';
+  if (loading || (!user && !isAuthPage) || (user && isAuthPage)) {
      return (
         <div className="flex min-h-screen items-center justify-center bg-background">
             <Loader2 className="size-8 animate-spin text-primary" />
         </div>
     );
-  }
-  
-  const isAuthPage = pathname === '/login';
-  // Avoid flashing the wrong page while redirecting
-  if ((!user && !isAuthPage) || (user && isAuthPage)) {
-      return (
-        <div className="flex min-h-screen items-center justify-center bg-background">
-            <Loader2 className="size-8 animate-spin text-primary" />
-        </div>
-      );
   }
 
   return (
