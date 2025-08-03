@@ -10,9 +10,7 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarFooter,
-  SidebarTrigger,
 } from '@/components/ui/sidebar';
-import { Button } from '@/components/ui/button';
 import { LineChart, List, Settings, Thermometer, LogOut, ShieldCheck } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
@@ -43,16 +41,17 @@ export function AppSidebar() {
         <SidebarMenu>
           {navItems.map((item) => (
             <SidebarMenuItem key={item.href}>
-              <Link href={item.href} legacyBehavior passHref>
-                <SidebarMenuButton
-                  isActive={pathname === item.href}
-                  tooltip={item.label}
-                  className="justify-start"
-                >
+              <SidebarMenuButton
+                asChild
+                isActive={pathname === item.href}
+                tooltip={item.label}
+                className="justify-start"
+              >
+                <Link href={item.href}>
                   <item.icon className="size-5" />
                   <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
-                </SidebarMenuButton>
-              </Link>
+                </Link>
+              </SidebarMenuButton>
             </SidebarMenuItem>
           ))}
         </SidebarMenu>
