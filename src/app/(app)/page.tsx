@@ -10,7 +10,7 @@ export default function DashboardPage() {
       <h1 className="text-2xl font-bold text-primary mb-6">Painel Principal</h1>
       <Card>
         <CardHeader>
-          <CardTitle>Bem-vindo ao TempGuard</CardTitle>
+          <CardTitle>Bem-vindo ao Controle de Qualidade</CardTitle>
         </CardHeader>
         <CardContent>
           <p>Selecione uma opção na barra lateral para começar.</p>

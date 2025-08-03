@@ -38,7 +38,7 @@ export default function Sidebar() {
   return (
     <div className="hidden md:flex flex-col w-64 bg-primary text-primary-foreground">
       <div className="p-6">
-        <h2 className="text-2xl font-bold text-center">TempGuard</h2>
+        <h2 className="text-2xl font-bold text-center">Controle de Qualidade</h2>
       </div>
       <nav className="flex-1 px-4 space-y-2">
         {navItems.map((item) => (

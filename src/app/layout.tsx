@@ -7,7 +7,7 @@ import { AuthProvider } from "@/context/AuthContext";
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
-  title: "TempGuard",
+  title: "Controle de Qualidade",
   description: "Sistema de Controle de Qualidade de Temperatura",
 };
 
