@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -53,7 +54,6 @@ type Registro = {
   };
   data: Timestamp;
   userId: string;
-  userName: string;
 };
 
 type jsPDFWithAutoTable = jsPDF & { autoTable: (options: any) => void };
@@ -200,7 +200,7 @@ export default function VisualizarPage() {
     const doc = new jsPDF({ orientation: 'landscape' }) as jsPDFWithAutoTable;
     doc.text("Relatório de Temperaturas", 14, 16);
     doc.autoTable({
-        head: [['Data', 'Hora', 'Turno', 'Local', 'Produto', 'Tipo', 'Estado', 'T. Início', 'T. Meio', 'T. Fim', 'Registrado por']],
+        head: [['Data', 'Hora', 'Turno', 'Local', 'Produto', 'Tipo', 'Estado', 'T. Início', 'T. Meio', 'T. Fim']],
         body: registros.map(reg => [
             reg.dataManual,
             reg.horarioManual,
@@ -212,7 +212,6 @@ export default function VisualizarPage() {
             reg.temperaturas.inicio.toFixed(1),
             reg.temperaturas.meio.toFixed(1),
             reg.temperaturas.fim.toFixed(1),
-            reg.userName || 'N/A'
         ]),
         startY: 20,
         headStyles: {
@@ -239,7 +238,6 @@ export default function VisualizarPage() {
         'Temp. Início (°C)': reg.temperaturas.inicio.toFixed(1),
         'Temp. Meio (°C)': reg.temperaturas.meio.toFixed(1),
         'Temp. Fim (°C)': reg.temperaturas.fim.toFixed(1),
-        'Registrado por': reg.userName || 'N/A',
       }));
 
       const ws = XLSX.utils.json_to_sheet(dadosParaExportar);
@@ -494,12 +492,6 @@ export default function VisualizarPage() {
                   <div className='flex-grow'>
                     <p><strong>Data:</strong> {reg.dataManual}</p>
                     <p><strong>Horário:</strong> {reg.horarioManual}</p>
-                    {reg.userName && (
-                       <p className='flex items-center gap-1 pt-1'>
-                         <User className="h-3 w-3" />
-                         {reg.userName}
-                       </p>
-                    )}
                   </div>
                    {canDeleteRecords && (
                      <AlertDialog>
@@ -513,7 +505,7 @@ export default function VisualizarPage() {
                           <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
                           <AlertDialogDescription>
                             Essa ação não pode ser desfeita. Isso excluirá permanentemente este registro.
-                          </Description>
+                          </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                           <AlertDialogCancel>Cancelar</AlertDialogCancel>

@@ -38,11 +38,10 @@ type RegistroTemperatura = {
   };
   data: Date;
   userId: string;
-  userName: string;
 };
 
 export default function RegistrarPage() {
-  const { user, userProfile } = useAuth();
+  const { user } = useAuth();
   const [turno, setTurno] = useState('');
   const [local, setLocal] = useState('');
   const [codigo, setCodigo] = useState('');
@@ -102,7 +101,7 @@ export default function RegistrarPage() {
     setError(null);
     setSuccess(null);
 
-    if (!user || !userProfile) {
+    if (!user) {
       showAlert('Usuário não autenticado. Faça login novamente.', 'error');
       setLoading(false);
       return;
@@ -150,7 +149,6 @@ export default function RegistrarPage() {
         },
         data: dataComHorario,
         userId: user.uid,
-        userName: userProfile.nome,
       };
 
       await addDoc(collection(db, 'registros'), novoRegistro);
@@ -339,3 +337,5 @@ export default function RegistrarPage() {
     </div>
   );
 }
+
+    

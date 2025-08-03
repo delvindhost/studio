@@ -31,7 +31,6 @@ type Registro = {
   };
   data: Timestamp;
   userId: string;
-  userName: string;
 };
 
 type UserProfile = {
@@ -326,3 +325,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    

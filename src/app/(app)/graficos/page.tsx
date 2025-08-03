@@ -41,7 +41,6 @@ type Registro = {
   };
   data: Timestamp;
   userId: string;
-  userName: string;
 };
 
 // Componente principal da página
@@ -505,5 +504,7 @@ export default function GraficosPage() {
     </div>
   );
 }
+
+    
 
     
