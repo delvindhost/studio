@@ -31,21 +31,23 @@ export default function LoginPage() {
     setLoading(true);
 
     if (!matricula.trim()) {
-        setError('Por favor, insira sua matrícula.');
+        setError('Por favor, insira sua matrícula ou e-mail.');
         setLoading(false);
         return;
     }
 
     try {
-      // Constrói o e-mail a partir da matrícula para autenticação
-      const emailToLogin = `${matricula.trim()}@ind.com.br`;
+      const loginInput = matricula.trim();
+      // Se o usuário digitar a matrícula, o sistema adiciona o domínio.
+      // Se digitar o e-mail completo, usa o que foi digitado.
+      const emailToLogin = loginInput.includes('@') ? loginInput : `${loginInput}@ind.com.br`;
       
       await signInWithEmailAndPassword(auth, emailToLogin, password);
       router.push('/');
 
     } catch (err: any) {
-      if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
-        setError('Falha no login. Verifique sua matrícula e senha.');
+      if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-email') {
+        setError('Falha no login. Verifique suas credenciais.');
       } else {
         setError('Ocorreu um erro inesperado. Tente novamente.');
       }
@@ -61,17 +63,17 @@ export default function LoginPage() {
         <CardHeader>
           <CardTitle className="text-2xl text-center text-primary">Controle de Qualidade</CardTitle>
           <CardDescription className="text-center">
-            Entre com sua matrícula e senha para acessar.
+            Entre com sua matrícula ou e-mail e senha.
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleLogin}>
           <CardContent className="grid gap-4">
             <div className="grid gap-2">
-              <Label htmlFor="matricula">Matrícula</Label>
+              <Label htmlFor="matricula">Matrícula ou E-mail</Label>
               <Input
                 id="matricula"
                 type="text"
-                placeholder="Sua matrícula"
+                placeholder="Sua matrícula ou e-mail"
                 required
                 value={matricula}
                 onChange={(e) => setMatricula(e.target.value)}
