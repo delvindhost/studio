@@ -17,14 +17,6 @@ import {
   DialogTrigger,
   DialogFooter,
   DialogClose,
-} from '@/components/ui/dialog';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -33,7 +25,14 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+  AlertDialogTrigger,
+} from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Checkbox } from '@/components/ui/checkbox';
 import { Loader2, UserPlus, Users, ShieldCheck, KeyRound, User, Trash2, MoreVertical, Edit } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
@@ -412,3 +411,5 @@ export default function UsuariosPage() {
     </div>
   );
 }
+
+    
