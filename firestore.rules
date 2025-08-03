@@ -1,31 +1,36 @@
-
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Regras para a coleção 'users'
-    match /users/{userId} {
-      
-      // Leitura: Qualquer usuário autenticado pode ler perfis para funcionalidades do app (ex: dashboard).
-      allow read: if request.auth != null;
-
-      // Criação: Um usuário pode criar seu próprio perfil. Essencial para o primeiro login.
-      // Admins podem criar outros usuários através da tela de gerenciamento.
-      allow create: if request.auth.uid == userId || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
-
-      // Atualização e Exclusão: Apenas administradores podem modificar ou remover perfis.
-      allow update, delete: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    // Helper function to check if the requesting user has the 'admin' role.
+    function isAdmin() {
+      // Check if the user document for the requester exists and if their role is 'admin'.
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
-    // Regras para a coleção 'registros'
+    match /users/{userId} {
+      // Any authenticated user can read any user's profile.
+      // This is needed for features like the user activity chart on the dashboard.
+      allow read: if request.auth != null;
+      
+      // An authenticated user can only create their own profile document.
+      // This is crucial for the first sign-in.
+      allow create: if request.auth != null && request.auth.uid == userId;
+      
+      // Allow a user to update their own document, OR allow an admin to update any document.
+      // This is required for admins to manage other users' permissions.
+      allow update: if (request.auth != null && request.auth.uid == userId) || isAdmin();
+
+      // Only admins can delete user profiles.
+      allow delete: if isAdmin();
+    }
+
     match /registros/{registroId} {
-
-      // Leitura e Criação: Qualquer usuário autenticado pode ler e registrar temperaturas.
+      // Any authenticated user can create and read records.
       allow read, create: if request.auth != null;
-
-      // Atualização e Exclusão: Apenas administradores podem alterar ou apagar registros.
-      allow update, delete: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      
+      // Only admins can update or delete records.
+      allow update, delete: if isAdmin();
     }
   }
 }
