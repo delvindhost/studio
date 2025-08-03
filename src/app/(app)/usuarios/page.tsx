@@ -79,7 +79,6 @@ export default function UsuariosPage() {
   // Form state
   const [nome, setNome] = useState('');
   const [matricula, setMatricula] = useState('');
-  const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [permissions, setPermissions] = useState<string[]>([]);
 
@@ -138,7 +137,6 @@ export default function UsuariosPage() {
   const resetForm = () => {
     setNome('');
     setMatricula('');
-    setEmail('');
     setSenha('');
     setPermissions([]);
     setEditingUser(null);
@@ -150,8 +148,7 @@ export default function UsuariosPage() {
     setEditingUser(user);
     setNome(user.nome);
     setMatricula(user.matricula);
-    setEmail(user.email);
-    setPermissions(user.permissions);
+    setPermissions(user.permissions || []);
     setSenha(''); // Senha não é preenchida por segurança
     setIsDialogOpen(true);
   };
@@ -171,13 +168,15 @@ export default function UsuariosPage() {
   }
 
   const handleAddUser = async () => {
-    if (!nome || !matricula || !senha || !email) {
-      showAlert('Por favor, preencha nome, matrícula, e-mail e senha.', 'error');
+    if (!nome || !matricula || !senha) {
+      showAlert('Por favor, preencha nome, matrícula e senha.', 'error');
       return;
     }
     setIsSubmitting(true);
     setError(null);
     setSuccess(null);
+
+    const email = `${matricula.trim()}@local.user`;
 
     try {
       const userCredential = await createUserWithEmailAndPassword(mainAuth, email, senha);
@@ -197,11 +196,9 @@ export default function UsuariosPage() {
       fetchUsers();
     } catch (err: any) {
         if (err.code === 'auth/email-already-in-use') {
-            showAlert('Erro: O e-mail informado já está em uso.', 'error');
+            showAlert('Erro: A matrícula informada já está em uso.', 'error');
         } else if (err.code === 'auth/weak-password') {
             showAlert('Erro: A senha deve ter no mínimo 6 caracteres.', 'error');
-        } else if (err.code === 'auth/invalid-email') {
-            showAlert('Erro: O e-mail informado é inválido.', 'error');
         } else {
             showAlert('Erro ao criar usuário. Verifique os dados e tente novamente.', 'error');
         }
@@ -212,8 +209,8 @@ export default function UsuariosPage() {
   };
 
   const handleUpdateUser = async () => {
-     if (!editingUser || !nome || !matricula || !email) {
-      showAlert('Por favor, preencha nome, matrícula e e-mail.', 'error');
+     if (!editingUser || !nome || !matricula) {
+      showAlert('Por favor, preencha nome e matrícula.', 'error');
       return;
     }
      if (senha && senha.length < 6) {
@@ -228,15 +225,9 @@ export default function UsuariosPage() {
     try {
         const userDocRef = doc(db, 'users', editingUser.id);
         
-        if (editingUser.email !== email) {
-           showAlert('A alteração de e-mail não é permitida diretamente. A autenticação do usuário está vinculada a ele. Para isso, remova e crie o usuário novamente.', 'error');
-           setIsSubmitting(false);
-           return;
-        }
-
         await updateDoc(userDocRef, {
             nome,
-            matricula,
+            matricula, // Matrícula agora pode ser atualizada
             permissions,
         });
 
@@ -315,12 +306,8 @@ export default function UsuariosPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="matricula">Matrícula</Label>
-                <Input id="matricula" value={matricula} onChange={(e) => setMatricula(e.target.value)} placeholder="Matrícula de identificação" disabled={isSubmitting}/>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">E-mail de Login</Label>
-                <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@dominio.com" disabled={isSubmitting || !!editingUser} />
-                {editingUser && <p className='text-xs text-muted-foreground'>O e-mail de login não pode ser alterado.</p>}
+                <Input id="matricula" value={matricula} onChange={(e) => setMatricula(e.target.value)} placeholder="Matrícula de identificação" disabled={isSubmitting || !!editingUser}/>
+                 {editingUser && <p className='text-xs text-muted-foreground'>A matrícula não pode ser alterada.</p>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="senha">Senha</Label>

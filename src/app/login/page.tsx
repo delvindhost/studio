@@ -19,7 +19,7 @@ import { Label } from "@/components/ui/label";
 import { Loader2 } from 'lucide-react';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
+  const [matricula, setMatricula] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -30,12 +30,23 @@ export default function LoginPage() {
     setError(null);
     setLoading(true);
 
+    // Valida se a matrícula não está vazia.
+    if (!matricula.trim()) {
+        setError('Por favor, insira sua matrícula.');
+        setLoading(false);
+        return;
+    }
+
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      // Constrói o e-mail a partir da matrícula para autenticação
+      const emailToLogin = `${matricula.trim()}@local.user`;
+      
+      await signInWithEmailAndPassword(auth, emailToLogin, password);
       router.push('/');
+
     } catch (err: any) {
       if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
-        setError('Falha no login. Verifique seu e-mail e senha.');
+        setError('Falha no login. Verifique sua matrícula e senha.');
       } else {
         setError('Ocorreu um erro inesperado. Tente novamente.');
       }
@@ -51,20 +62,20 @@ export default function LoginPage() {
         <CardHeader>
           <CardTitle className="text-2xl text-center text-primary">Controle de Qualidade</CardTitle>
           <CardDescription className="text-center">
-            Entre com seu e-mail e senha para acessar.
+            Entre com sua matrícula e senha para acessar.
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleLogin}>
           <CardContent className="grid gap-4">
             <div className="grid gap-2">
-              <Label htmlFor="email">E-mail</Label>
+              <Label htmlFor="matricula">Matrícula</Label>
               <Input
-                id="email"
-                type="email"
-                placeholder="seu@email.com"
+                id="matricula"
+                type="text"
+                placeholder="Sua matrícula"
                 required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={matricula}
+                onChange={(e) => setMatricula(e.target.value)}
                 disabled={loading}
               />
             </div>
