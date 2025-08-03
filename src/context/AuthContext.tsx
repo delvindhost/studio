@@ -43,8 +43,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             role: userData.role || 'user',
           });
         } else {
-           // If user exists in Auth but not in Firestore, create their profile.
-           // This handles the initial admin user case.
+           // Se o usuário existe na Auth mas não no Firestore, cria o perfil.
+           // Caso especial para o admin geral.
            const isAdmin = firebaseUser.email === 'cq.uia@ind.com.br';
            const userRole = isAdmin ? 'admin' : 'user';
 
@@ -71,21 +71,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const isLoginPage = pathname === '/login';
     const isAppRoute = !isLoginPage;
 
-    // If no user, but trying to access app -> redirect to login
+    // Se não há usuário, mas está tentando acessar uma rota do app, redireciona para o login.
     if (!user && isAppRoute) {
       router.push('/login');
     }
 
-    // If user exists, but is on login page -> redirect to their home
+    // Se há usuário, mas está na página de login, redireciona para a página principal.
     if (user && isLoginPage) {
-       router.push(user.role === 'admin' ? '/admin' : '/');
+       router.push('/');
     }
   }, [user, loading, pathname, router]);
 
   const login = async (email: string, password: string) => {
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      // The onAuthStateChanged listener will handle the user state update and redirection.
+      // O onAuthStateChanged listener vai cuidar da atualização do estado e redirecionamento.
       return { success: true };
     } catch (error) {
       console.error("Login error:", error);
@@ -95,14 +95,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     await signOut(auth);
-    router.push('/login');
+    // O onAuthStateChanged vai detectar a ausência de usuário e o useEffect vai redirecionar para /login.
   };
 
   const value = { user, loading, login, logout };
   
-  const isLoginPage = pathname === '/login';
-  
-  if (loading && !isLoginPage) {
+  // Mostra um loader global em todas as páginas, exceto no login, enquanto a autenticação carrega.
+  if (loading && pathname !== '/login') {
      return (
         <div className="flex min-h-screen items-center justify-center bg-background">
             <Loader2 className="size-8 animate-spin text-primary" />
@@ -110,6 +109,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
   }
 
+  // Renderiza a página de login imediatamente, mesmo durante o carregamento,
+  // ou renderiza as outras páginas se o carregamento já terminou.
   return (
     <AuthContext.Provider value={value}>
         {children}
