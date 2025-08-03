@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/context/AuthContext';
 import { ShieldCheck, LogIn, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { auth, db } from '@/lib/firebase';
@@ -16,7 +15,6 @@ export default function LoginPage() {
   const [email, setEmail] = useState('cq.uia@ind.com.br');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth(); // We still use context to trigger state change, but handle logic here.
   const { toast } = useToast();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -26,18 +24,20 @@ export default function LoginPage() {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // Ensure user profile exists in Firestore, especially for the admin
+      // Garante que o perfil do usuário exista no Firestore
       const userDocRef = doc(db, 'users', user.uid);
       const userDoc = await getDoc(userDocRef);
 
       if (!userDoc.exists()) {
+        // Se o perfil não existe, cria um.
+        // Lógica especial para o administrador inicial.
         const isAdmin = user.email === 'cq.uia@ind.com.br';
         await setDoc(userDocRef, {
           email: user.email,
           role: isAdmin ? 'admin' : 'user',
         });
       }
-      // The AuthProvider's onAuthStateChanged will now handle the state update and redirection correctly.
+      // O AuthProvider cuidará do redirecionamento após a atualização do estado.
 
     } catch (error) {
        toast({
@@ -47,7 +47,7 @@ export default function LoginPage() {
         });
        setIsLoading(false);
     }
-    // Don't set loading to false on success, as the page will redirect.
+    // Não definimos isLoading como false em caso de sucesso, pois a página irá redirecionar.
   };
 
   return (

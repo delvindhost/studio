@@ -3,7 +3,7 @@
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { auth, db } from '@/lib/firebase';
-import { onAuthStateChanged, signInWithEmailAndPassword, signOut, User as FirebaseUser } from 'firebase/auth';
+import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { Loader2 } from 'lucide-react';
 
@@ -16,8 +16,7 @@ interface UserProfile {
 interface AuthContextType {
   user: UserProfile | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<{ success: boolean; }>;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -42,11 +41,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             role: userData.role || 'user',
           });
         } else {
-          // This can happen if user is created in Auth but not Firestore.
-          // For now, we log them out to force a clean profile creation path.
-          // The login function itself will handle creating the profile if needed.
-          await signOut(auth);
-          setUser(null);
+          // Se o documento não existe no Firestore, o usuário não está totalmente configurado.
+          // A página de login cuidará da criação do documento.
+          // Por segurança, não definimos um usuário aqui para evitar estados inconsistentes.
+           setUser(null);
         }
       } else {
         setUser(null);
@@ -62,34 +60,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const isAuthPage = pathname === '/login';
 
-    // If user is not logged in and not on login page, redirect to login
     if (!user && !isAuthPage) {
       router.push('/login');
     }
 
-    // If user is logged in and on login page, redirect to home
     if (user && isAuthPage) {
        router.push('/');
     }
   }, [user, loading, pathname, router]);
 
-  const login = async (email: string, password: string) => {
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-      // onAuthStateChanged listener handles user state update and redirection
-      return { success: true };
-    } catch (error) {
-      console.error("Login error:", error);
-      return { success: false };
-    }
-  };
 
   const logout = async () => {
-    await signOut(auth);
-    // onAuthStateChanged will detect no user and the useEffect will redirect to /login.
-    router.push('/login');
+    await auth.signOut();
+    // onAuthStateChanged irá detectar a ausência de usuário e o useEffect irá redirecionar.
   };
   
+  // Enquanto estiver carregando, mostra um spinner global.
   if (loading) {
      return (
         <div className="flex min-h-screen items-center justify-center bg-background">
@@ -98,14 +84,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
   }
   
-  // Prevent children from rendering if redirection is about to happen
+  // Para evitar um piscar de conteúdo, não renderiza as páginas de destino
+  // se um redirecionamento estiver prestes a acontecer.
   const isAuthPage = pathname === '/login';
-  if (!user && !isAuthPage) return null;
-  if (user && isAuthPage) return null;
+  if ((!user && !isAuthPage) || (user && isAuthPage)) {
+      return (
+        <div className="flex min-h-screen items-center justify-center bg-background">
+            <Loader2 className="size-8 animate-spin text-primary" />
+        </div>
+      );
+  }
 
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, logout }}>
         {children}
     </AuthContext.Provider>
   );
