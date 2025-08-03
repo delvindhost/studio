@@ -1,6 +1,5 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <meta http-equiv="refresh" content="0; url=/index.html" />
-  </head>
-</html>
+import LoginPage from "./login/page";
+
+export default function Home() {
+  return <LoginPage />;
+}
