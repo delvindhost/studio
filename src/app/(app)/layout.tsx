@@ -12,7 +12,7 @@ export default function AppLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, loading } = useAuth();
+  const { user, userProfile, loading } = useAuth();
   const router = useRouter();
   const [isSidebarOpen, setSidebarOpen] = useState(false);
 
@@ -35,7 +35,7 @@ export default function AppLayout({
     <div className="flex min-h-screen w-full bg-background">
       <Sidebar isSidebarOpen={isSidebarOpen} setSidebarOpen={setSidebarOpen} />
       <div className="flex flex-1 flex-col md:ml-64">
-        <Header setSidebarOpen={setSidebarOpen} />
+        <Header setSidebarOpen={setSidebarOpen} userProfile={userProfile} />
         <main className="flex-1 p-4 sm:p-6 md:p-8 overflow-y-auto">
             {children}
         </main>

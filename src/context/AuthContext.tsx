@@ -7,7 +7,7 @@ import { auth, db } from '@/lib/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 
-interface UserProfile {
+export interface UserProfile {
   nome: string;
   matricula: string;
   role: 'admin' | 'user';
@@ -63,9 +63,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       } else {
         setUser(null);
         setUserProfile(null);
-        if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
-            router.push('/login');
-        }
+        // O redirecionamento foi movido para o AppLayout para evitar erros de renderização
       }
       setLoading(false);
     });
