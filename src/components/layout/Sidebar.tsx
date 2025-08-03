@@ -50,7 +50,13 @@ export default function Sidebar({ isSidebarOpen, setSidebarOpen }: SidebarProps)
     if (!userProfile) return false;
     if (userProfile.role === 'admin') return true;
     if (item.admin) return false;
-    // Ensure permissions array exists before calling .includes()
+    
+    // CORREÇÃO: Garante que a permissão para o Dashboard ('/') seja verificada explicitamente.
+    if (item.href === '/') {
+        return userProfile.permissions && userProfile.permissions.includes('/');
+    }
+
+    // Mantém a verificação para as outras páginas.
     return userProfile.permissions && userProfile.permissions.includes(item.href);
   }
 
