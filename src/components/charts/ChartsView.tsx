@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useTransition, useEffect, useCallback } from "react";
@@ -28,14 +29,19 @@ export function ChartsView({ getRecordsAction }: ChartsViewProps) {
     defaultValues: {
       startDate: format(new Date(), "yyyy-MM-dd"),
       endDate: format(new Date(), "yyyy-MM-dd"),
-      local: "",
-      mercado: "",
+      local: "all",
+      mercado: "all",
     },
   });
 
   const fetchRecords = useCallback((filters: any) => {
     startTransition(async () => {
-      const result = await getRecordsAction({ ...filters, tipo: filters.mercado });
+      const dbFilters = {
+        ...filters,
+        local: filters.local === 'all' ? '' : filters.local,
+        tipo: filters.mercado === 'all' ? '' : filters.mercado,
+      };
+      const result = await getRecordsAction(dbFilters);
       const clientRecords = result.map(r => ({ ...r, data: new Date(r.data.seconds * 1000) }));
       setRecords(clientRecords);
     });
@@ -65,10 +71,10 @@ export function ChartsView({ getRecordsAction }: ChartsViewProps) {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="local">Local</Label>
-                <Select onValueChange={(v) => setValue('local', v)}>
+                <Select onValueChange={(v) => setValue('local', v)} defaultValue="all">
                   <SelectTrigger><SelectValue placeholder="Todos os locais" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todos os locais</SelectItem>
+                    <SelectItem value="all">Todos os locais</SelectItem>
                     {locationOptions.map((group) => (
                       <SelectGroup key={group.label}>
                         <SelectLabel>{group.label}</SelectLabel>
@@ -84,10 +90,10 @@ export function ChartsView({ getRecordsAction }: ChartsViewProps) {
               </div>
                <div className="space-y-2">
                 <Label htmlFor="mercado">Mercado</Label>
-                 <Select onValueChange={(v) => setValue('mercado', v)}>
+                 <Select onValueChange={(v) => setValue('mercado', v)} defaultValue="all">
                   <SelectTrigger><SelectValue placeholder="Todos" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todos</SelectItem>
+                    <SelectItem value="all">Todos</SelectItem>
                     <SelectItem value="MI">Mercado Interno (MI)</SelectItem>
                     <SelectItem value="ME">Mercado Externo (ME)</SelectItem>
                   </SelectContent>
@@ -141,3 +147,5 @@ export function ChartsView({ getRecordsAction }: ChartsViewProps) {
     </div>
   );
 }
+
+    

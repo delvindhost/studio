@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useTransition, useEffect, useCallback } from "react";
@@ -28,19 +29,25 @@ export function RecordsView({ getRecordsAction, deleteRecordAction }: RecordsVie
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
 
-  const { register, handleSubmit, watch } = useForm({
+  const { register, handleSubmit, watch, setValue } = useForm({
     defaultValues: {
       startDate: format(new Date(), "yyyy-MM-dd"),
       endDate: format(new Date(), "yyyy-MM-dd"),
-      local: "",
-      turno: "",
-      tipo: "",
+      local: "all",
+      turno: "all",
+      tipo: "all",
     },
   });
 
   const fetchRecords = useCallback((filters: any) => {
     startTransition(async () => {
-      const result = await getRecordsAction(filters);
+      const dbFilters = {
+        ...filters,
+        local: filters.local === 'all' ? '' : filters.local,
+        turno: filters.turno === 'all' ? '' : filters.turno,
+        tipo: filters.tipo === 'all' ? '' : filters.tipo,
+      }
+      const result = await getRecordsAction(dbFilters);
       const clientRecords = result.map(r => ({ ...r, data: new Date(r.data.seconds * 1000) }));
       setRecords(clientRecords);
     });
@@ -148,10 +155,14 @@ export function RecordsView({ getRecordsAction, deleteRecordAction }: RecordsVie
               </div>
               <div className="space-y-2">
                 <Label htmlFor="local">Local</Label>
-                <Select {...register("local")} onValueChange={(value) => onFilterSubmit({ ...watch(), local: value })}>
+                <Select
+                  {...register("local")}
+                  onValueChange={(value) => setValue('local', value)}
+                  defaultValue="all"
+                >
                   <SelectTrigger><SelectValue placeholder="Todos os locais" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todos os locais</SelectItem>
+                    <SelectItem value="all">Todos os locais</SelectItem>
                     {locationOptions.map((group) => (
                       <SelectGroup key={group.label}>
                         <SelectLabel>{group.label}</SelectLabel>
@@ -167,10 +178,10 @@ export function RecordsView({ getRecordsAction, deleteRecordAction }: RecordsVie
               </div>
               <div className="space-y-2">
                 <Label htmlFor="turno">Turno</Label>
-                 <Select {...register("turno")} onValueChange={(value) => onFilterSubmit({ ...watch(), turno: value })}>
+                 <Select {...register("turno")} onValueChange={(value) => setValue('turno', value)} defaultValue="all">
                   <SelectTrigger><SelectValue placeholder="Todos" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todos</SelectItem>
+                    <SelectItem value="all">Todos</SelectItem>
                     <SelectItem value="1">1º Turno</SelectItem>
                     <SelectItem value="2">2º Turno</SelectItem>
                   </SelectContent>
@@ -178,10 +189,10 @@ export function RecordsView({ getRecordsAction, deleteRecordAction }: RecordsVie
               </div>
                <div className="space-y-2">
                 <Label htmlFor="tipo">Mercado</Label>
-                 <Select {...register("tipo")} onValueChange={(value) => onFilterSubmit({ ...watch(), tipo: value })}>
+                 <Select {...register("tipo")} onValueChange={(value) => setValue('tipo', value)} defaultValue="all">
                   <SelectTrigger><SelectValue placeholder="Todos" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todos</SelectItem>
+                    <SelectItem value="all">Todos</SelectItem>
                     <SelectItem value="MI">MI</SelectItem>
                     <SelectItem value="ME">ME</SelectItem>
                   </SelectContent>
@@ -218,3 +229,5 @@ export function RecordsView({ getRecordsAction, deleteRecordAction }: RecordsVie
     </div>
   );
 }
+
+    
