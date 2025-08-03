@@ -39,15 +39,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(user);
         const userDocRef = doc(db, 'users', user.uid);
         
-        // **CORREÇÃO:** Força o perfil de admin para o e-mail específico, garantindo acesso total.
+        // **CORREÇÃO DEFINITIVA:** Força o perfil de admin para o e-mail específico, 
+        // garantindo acesso total e corrigindo o registro no Firestore.
         if (user.email === 'cq.uia@ind.com.br') {
             const adminProfile: UserProfile = { 
                 nome: 'Admin UIA',
                 matricula: 'admin', 
                 role: 'admin', 
-                permissions: ['/','/visualizar','/graficos','/usuarios','/configuracoes'] 
+                permissions: ['/', '/visualizar', '/graficos', '/usuarios', '/configuracoes'] 
             };
-            // Garante que o perfil no banco de dados esteja sempre correto.
+            // Garante que o perfil no banco de dados esteja sempre correto, sobrescrevendo se necessário.
             await setDoc(userDocRef, adminProfile, { merge: true }); 
             setUserProfile(adminProfile);
         } else {
