@@ -38,25 +38,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (user) {
         setUser(user);
         const userDocRef = doc(db, 'users', user.uid);
-        const userDoc = await getDoc(userDocRef);
-
-        if (userDoc.exists()) {
-          setUserProfile(userDoc.data() as UserProfile);
-        } else {
-           // This case is for the initial admin user creation
-           if (user.email === 'cq.uia@ind.com.br') {
+        
+        // **CORREÇÃO:** Força o perfil de admin para o e-mail específico, garantindo acesso total.
+        if (user.email === 'cq.uia@ind.com.br') {
             const adminProfile: UserProfile = { 
                 nome: 'Admin UIA',
-                matricula: 'admin', // Adicionado para consistência
+                matricula: 'admin', 
                 role: 'admin', 
                 permissions: ['/','/visualizar','/graficos','/usuarios','/configuracoes'] 
             };
-            await setDoc(userDocRef, adminProfile);
+            // Garante que o perfil no banco de dados esteja sempre correto.
+            await setDoc(userDocRef, adminProfile, { merge: true }); 
             setUserProfile(adminProfile);
-          } else {
-             // Fallback for users authenticated but without a profile
-             setUserProfile({ role: 'user', permissions: [], nome: 'Usuário', matricula: '' });
-          }
+        } else {
+            const userDoc = await getDoc(userDocRef);
+            if (userDoc.exists()) {
+                setUserProfile(userDoc.data() as UserProfile);
+            } else {
+                // Usuário logado mas sem perfil (não deve acontecer no fluxo normal)
+                setUserProfile({ role: 'user', permissions: [], nome: 'Usuário', matricula: '' });
+            }
         }
       } else {
         setUser(null);
