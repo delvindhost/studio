@@ -30,7 +30,6 @@ export default function LoginPage() {
     setError(null);
     setLoading(true);
 
-    // Valida se a matrícula não está vazia.
     if (!matricula.trim()) {
         setError('Por favor, insira sua matrícula.');
         setLoading(false);

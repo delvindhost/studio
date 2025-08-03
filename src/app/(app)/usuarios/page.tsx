@@ -78,6 +78,7 @@ export default function UsuariosPage() {
   
   // Form state
   const [nome, setNome] = useState('');
+  const [email, setEmail] = useState('');
   const [matricula, setMatricula] = useState('');
   const [senha, setSenha] = useState('');
   const [permissions, setPermissions] = useState<string[]>([]);
@@ -111,6 +112,17 @@ export default function UsuariosPage() {
       setLoading(false);
     }
   };
+  
+  const handleMatriculaChange = (value: string) => {
+      const newMatricula = value.trim();
+      setMatricula(newMatricula);
+      if (newMatricula) {
+        setEmail(`${newMatricula}@local.user`);
+      } else {
+        setEmail('');
+      }
+  }
+
 
   const showAlert = (message: string, type: 'success' | 'error') => {
     if (type === 'success') {
@@ -136,6 +148,7 @@ export default function UsuariosPage() {
   
   const resetForm = () => {
     setNome('');
+    setEmail('');
     setMatricula('');
     setSenha('');
     setPermissions([]);
@@ -148,6 +161,7 @@ export default function UsuariosPage() {
     setEditingUser(user);
     setNome(user.nome);
     setMatricula(user.matricula);
+    setEmail(user.email);
     setPermissions(user.permissions || []);
     setSenha(''); // Senha não é preenchida por segurança
     setIsDialogOpen(true);
@@ -168,15 +182,13 @@ export default function UsuariosPage() {
   }
 
   const handleAddUser = async () => {
-    if (!nome || !matricula || !senha) {
+    if (!nome || !matricula || !senha || !email) {
       showAlert('Por favor, preencha nome, matrícula e senha.', 'error');
       return;
     }
     setIsSubmitting(true);
     setError(null);
     setSuccess(null);
-
-    const email = `${matricula.trim()}@local.user`;
 
     try {
       const userCredential = await createUserWithEmailAndPassword(mainAuth, email, senha);
@@ -227,7 +239,6 @@ export default function UsuariosPage() {
         
         await updateDoc(userDocRef, {
             nome,
-            matricula, // Matrícula agora pode ser atualizada
             permissions,
         });
 
@@ -306,8 +317,11 @@ export default function UsuariosPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="matricula">Matrícula</Label>
-                <Input id="matricula" value={matricula} onChange={(e) => setMatricula(e.target.value)} placeholder="Matrícula de identificação" disabled={isSubmitting || !!editingUser}/>
-                 {editingUser && <p className='text-xs text-muted-foreground'>A matrícula não pode ser alterada.</p>}
+                <Input id="matricula" value={matricula} onChange={(e) => handleMatriculaChange(e.target.value)} placeholder="Matrícula de identificação" disabled={isSubmitting || !!editingUser}/>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="email">E-mail de Login (automático)</Label>
+                <Input id="email" value={email} readOnly disabled placeholder="Será gerado a partir da matrícula" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="senha">Senha</Label>
