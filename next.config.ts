@@ -1,3 +1,4 @@
+
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
@@ -17,6 +18,21 @@ const nextConfig: NextConfig = {
         pathname: '/**',
       },
     ],
+  },
+  async redirects() {
+    return [
+      {
+        source: '/',
+        destination: '/login',
+        permanent: false,
+        missing: [
+            {
+                type: 'cookie',
+                key: 'firebaseIdToken' // A cookie firebase auth sets
+            }
+        ]
+      },
+    ]
   },
 };
 

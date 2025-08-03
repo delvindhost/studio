@@ -1,21 +1,26 @@
+
 "use client";
 
 import { useAuth } from '@/context/AuthContext';
-import { LoginOverlay } from '@/components/auth/LoginOverlay';
 import { AppSidebar } from '@/components/layout/AppSidebar';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
+import { AdminSidebar } from './AdminSidebar';
+import { usePathname } from 'next/navigation';
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, login } = useAuth();
+  const { user } = useAuth();
+  const pathname = usePathname();
 
-  if (!isAuthenticated) {
-    return <LoginOverlay onLogin={login} />;
+  if (!user) {
+    return null; // Or a loading spinner, handled by AuthProvider
   }
+
+  const isAdminSection = pathname.startsWith('/admin');
 
   return (
     <SidebarProvider>
       <div className="flex min-h-screen bg-background">
-        <AppSidebar />
+        {isAdminSection ? <AdminSidebar /> : <AppSidebar />}
         <SidebarInset className="flex-1 p-4 sm:p-6 lg:p-8">
           {children}
         </SidebarInset>

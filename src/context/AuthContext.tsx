@@ -1,84 +1,104 @@
+
 "use client";
 
-import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
+import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
+import { auth, db } from '@/lib/firebase';
+import { onAuthStateChanged, signInWithEmailAndPassword, signOut, User } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
 
-const SESSION_DURATION = 3600000; // 1 hour
+interface UserProfile {
+    uid: string;
+    email: string | null;
+    role: 'admin' | 'user';
+}
 
 interface AuthContextType {
-  isAuthenticated: boolean;
-  login: (password: string) => boolean;
+  user: UserProfile | null;
+  loading: boolean;
+  login: (email: string, password: string) => Promise<{ success: boolean; role?: string }>;
   logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoaded, setIsLoaded] = useState(false);
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+  const pathname = usePathname();
 
-  const logout = useCallback(() => {
-    localStorage.removeItem('session_timestamp');
-    setIsAuthenticated(false);
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: User | null) => {
+      if (firebaseUser) {
+        const userDocRef = doc(db, 'users', firebaseUser.uid);
+        const userDoc = await getDoc(userDocRef);
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          setUser({
+            uid: firebaseUser.uid,
+            email: firebaseUser.email,
+            role: userData.role || 'user',
+          });
+        } else {
+           // This case handles a user that exists in Auth but not Firestore.
+           // You might want to log them out or create a default user doc.
+           setUser(null);
+           await signOut(auth);
+        }
+      } else {
+        setUser(null);
+      }
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
   }, []);
 
-  const resetSession = useCallback(() => {
-    if (isAuthenticated) {
-      localStorage.setItem('session_timestamp', Date.now().toString());
-    }
-  }, [isAuthenticated]);
-
   useEffect(() => {
+    if (!loading && !user && pathname !== '/login') {
+      router.push('/login');
+    }
+  }, [user, loading, pathname, router]);
+
+  const login = async (email: string, password: string) => {
     try {
-      const lastActivity = localStorage.getItem('session_timestamp');
-      if (lastActivity && Date.now() - parseInt(lastActivity) < SESSION_DURATION) {
-        setIsAuthenticated(true);
-        resetSession();
-      } else {
-        logout();
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const firebaseUser = userCredential.user;
+      
+      const userDocRef = doc(db, 'users', firebaseUser.uid);
+      const userDoc = await getDoc(userDocRef);
+
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        const role = userData.role || 'user';
+         setUser({
+            uid: firebaseUser.uid,
+            email: firebaseUser.email,
+            role: role,
+        });
+        return { success: true, role };
       }
+      // Log out if no user profile is found in Firestore
+      await signOut(auth);
+      return { success: false };
     } catch (error) {
-      console.error("Could not access local storage", error);
-      logout();
+      console.error("Login error:", error);
+      return { success: false };
     }
-    setIsLoaded(true);
-  }, [logout, resetSession]);
-
-  useEffect(() => {
-    let activityInterval: NodeJS.Timeout;
-    
-    if (isAuthenticated) {
-      activityInterval = setInterval(() => {
-        const lastActivity = localStorage.getItem('session_timestamp');
-        if (lastActivity && Date.now() - parseInt(lastActivity) > SESSION_DURATION) {
-          logout();
-        }
-      }, 60000); // Check every minute
-
-      window.addEventListener('mousemove', resetSession);
-      window.addEventListener('keydown', resetSession);
-    }
-
-    return () => {
-      clearInterval(activityInterval);
-      window.removeEventListener('mousemove', resetSession);
-      window.removeEventListener('keydown', resetSession);
-    };
-  }, [isAuthenticated, logout, resetSession]);
-
-  const login = (password: string): boolean => {
-    if (password === '2025') {
-      setIsAuthenticated(true);
-      localStorage.setItem('session_timestamp', Date.now().toString());
-      return true;
-    }
-    return false;
   };
 
-  const value = { isAuthenticated, login, logout };
+  const logout = async () => {
+    await signOut(auth);
+    setUser(null);
+    router.push('/login');
+  };
+
+  const value = { user, loading, login, logout };
 
   return (
     <AuthContext.Provider value={value}>
-      {isLoaded ? children : null}
+        {loading || (!user && pathname !== '/login') ? null : children}
     </AuthContext.Provider>
   );
 }

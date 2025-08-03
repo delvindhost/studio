@@ -12,19 +12,17 @@ import {
   SidebarMenuButton,
   SidebarFooter,
 } from '@/components/ui/sidebar';
-import { LineChart, List, Settings, Thermometer, LogOut, ShieldCheck, UserCog } from 'lucide-react';
+import { Users, LogOut, ShieldCheck, LayoutDashboard } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
 const navItems = [
-  { href: '/', label: 'Registrar', icon: Thermometer },
-  { href: '/visualize', label: 'Visualizar', icon: List },
-  { href: '/charts', label: 'Gráficos', icon: LineChart },
-  { href: '/settings', label: 'Configurações', icon: Settings },
+  { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/admin/users', label: 'Usuários', icon: Users },
 ];
 
-export function AppSidebar() {
+export function AdminSidebar() {
   const pathname = usePathname();
-  const { logout, user } = useAuth();
+  const { logout } = useAuth();
 
   return (
     <Sidebar>
@@ -34,7 +32,7 @@ export function AppSidebar() {
               <ShieldCheck className="size-6" />
             </div>
             <h2 className="text-lg font-semibold text-sidebar-primary tracking-tight group-data-[collapsible=icon]:hidden">
-                TempGuard
+                Admin
             </h2>
         </div>
       </SidebarHeader>
@@ -58,17 +56,15 @@ export function AppSidebar() {
         </SidebarMenu>
       </SidebarContent>
       <SidebarFooter className="p-2">
-        <SidebarMenu>
-          {user?.role === 'admin' && (
-             <SidebarMenuItem>
-              <SidebarMenuButton asChild tooltip="Admin" className="justify-start">
-                  <Link href="/admin">
-                      <UserCog className="size-5"/>
-                      <span className="group-data-[collapsible=icon]:hidden">Admin</span>
-                  </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          )}
+         <SidebarMenu>
+           <SidebarMenuItem>
+            <SidebarMenuButton asChild tooltip="Voltar ao App" className="justify-start">
+                <Link href="/">
+                    <LayoutDashboard className="size-5"/>
+                    <span className="group-data-[collapsible=icon]:hidden">App</span>
+                </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton onClick={logout} className="justify-start" tooltip="Sair">
               <LogOut className="size-5" />

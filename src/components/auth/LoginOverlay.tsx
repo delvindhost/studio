@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -5,21 +6,29 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ShieldCheck } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import { useRouter } from 'next/navigation';
 
-interface LoginOverlayProps {
-  onLogin: (password: string) => boolean;
-}
-
-export function LoginOverlay({ onLogin }: LoginOverlayProps) {
+export function LoginOverlay() {
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const { login } = useAuth();
+  const router = useRouter();
 
-  const handleLogin = (e: React.FormEvent) => {
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const success = onLogin(password);
+    const { success, role } = await login(email, password);
     if (!success) {
-      setError('Senha incorreta!');
+      setError('Email ou senha incorretos!');
       setPassword('');
+    } else {
+        if(role === 'admin') {
+            router.push('/admin');
+        } else {
+            router.push('/');
+        }
     }
   };
 
@@ -31,10 +40,20 @@ export function LoginOverlay({ onLogin }: LoginOverlayProps) {
             <ShieldCheck className="size-8" />
           </div>
           <CardTitle>Controle de Qualidade</CardTitle>
-          <CardDescription>Digite a senha para acessar o sistema.</CardDescription>
+          <CardDescription>Digite seu email e senha para acessar.</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
+             <div className="space-y-2">
+                <Input
+                    id="email"
+                    type="email"
+                    placeholder="seu@email.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                />
+            </div>
             <div className="space-y-2">
               <Input
                 id="password"
