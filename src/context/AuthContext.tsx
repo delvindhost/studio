@@ -98,7 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider value={value}>
-        {loading || (!user && pathname !== '/login') ? null : children}
+        {children}
     </AuthContext.Provider>
   );
 }

@@ -8,11 +8,15 @@ import { AdminSidebar } from './AdminSidebar';
 import { usePathname } from 'next/navigation';
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const pathname = usePathname();
 
-  if (!user) {
-    return null; // Or a loading spinner, handled by AuthProvider
+  if (pathname === '/login') {
+    return <>{children}</>;
+  }
+  
+  if (loading || !user) {
+    return null; // Or a loading spinner
   }
 
   const isAdminSection = pathname.startsWith('/admin');
