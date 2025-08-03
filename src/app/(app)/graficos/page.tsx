@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { BarChart, LineChart, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Bar, Line, ResponsiveContainer } from 'recharts';
+import { BarChart, LineChart, XAxis, YAxis, CartesianGrid, Tooltip, Bar, Line, ResponsiveContainer } from 'recharts';
 import { Loader2, Filter, ChevronsUpDown, Check } from 'lucide-react';
 import { produtosPorCodigo } from '@/lib/produtos';
 import { cn } from '@/lib/utils';
@@ -286,12 +286,11 @@ export default function GraficosPage() {
                 </CardHeader>
                 <CardContent className='h-[500px]'>
                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={dadosGraficoProduto} layout="horizontal" margin={{ top: 5, right: 30, left: 100, bottom: 5 }}>
+                        <BarChart data={dadosGraficoProduto} layout="vertical" margin={{ top: 5, right: 30, left: 100, bottom: 5 }}>
                             <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="name" type="category" width={150} interval={0} />
-                            <YAxis type="number" />
+                            <XAxis type="number" />
+                            <YAxis dataKey="name" type="category" width={150} interval={0} />
                             <Tooltip />
-                            <Legend verticalAlign="top" wrapperStyle={{ lineHeight: '40px' }} />
                             <Bar dataKey="Temperatura Média" fill="hsl(var(--primary))" />
                         </BarChart>
                     </ResponsiveContainer>
@@ -309,7 +308,6 @@ export default function GraficosPage() {
                             <XAxis dataKey="name" />
                             <YAxis />
                             <Tooltip />
-                            <Legend verticalAlign="top" wrapperStyle={{ lineHeight: '40px' }} />
                             <Bar dataKey="Início" fill="#4B0082" />
                             <Bar dataKey="Meio" fill="#8A2BE2" />
                             <Bar dataKey="Fim" fill="#9370DB" />
@@ -329,7 +327,6 @@ export default function GraficosPage() {
                             <XAxis dataKey="name" angle={-20} textAnchor="end" height={60} interval={'preserveStartEnd'}/>
                             <YAxis />
                             <Tooltip />
-                            <Legend verticalAlign="top" wrapperStyle={{ lineHeight: '40px' }} />
                             <Line type="monotone" dataKey="Início" stroke="#4B0082" activeDot={{ r: 8 }} />
                             <Line type="monotone" dataKey="Meio" stroke="#8A2BE2" />
                             <Line type="monotone" dataKey="Fim" stroke="#9370DB" />
@@ -342,4 +339,3 @@ export default function GraficosPage() {
     </div>
   );
 }
-
