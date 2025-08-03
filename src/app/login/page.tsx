@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { auth, db } from '@/lib/firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { useRouter } from 'next/navigation';
 
 
 export default function LoginPage() {
@@ -16,14 +17,26 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const router = useRouter();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      // The AuthProvider will handle redirection after the auth state changes.
-      // We don't need to do anything else here.
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // Ensure admin user has a profile in Firestore
+      if (user.email === 'cq.uia@ind.com.br') {
+        const userDocRef = doc(db, 'users', user.uid);
+        const userDoc = await getDoc(userDocRef);
+        if (!userDoc.exists()) {
+          await setDoc(userDocRef, { email: user.email, role: 'admin' });
+        }
+      }
+      
+      router.push('/');
+
     } catch (error) {
        toast({
           title: "Erro de Login",
@@ -32,7 +45,7 @@ export default function LoginPage() {
         });
        setIsLoading(false);
     }
-    // We don't set isLoading to false on success because the page will redirect away.
+    // No need to set isLoading to false on success, as we are redirecting
   };
 
   return (

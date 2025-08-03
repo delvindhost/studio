@@ -1,10 +1,10 @@
 "use client";
 
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { Loader2 } from 'lucide-react';
 
 interface UserProfile {
@@ -19,13 +19,16 @@ interface AuthContextType {
   logout: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | null>(null);
+const AuthContext = createContext<AuthContextType>({
+    user: null,
+    loading: true,
+    logout: async () => {},
+});
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
-  const pathname = usePathname();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
@@ -41,58 +44,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             role: userData.role || 'user',
           });
         } else {
-           // If user exists in Auth but not Firestore, create their profile.
-           // This handles the initial login for the admin user.
-           const isAdmin = firebaseUser.email === 'cq.uia@ind.com.br';
-           const newUserProfile: UserProfile = {
-             uid: firebaseUser.uid,
-             email: firebaseUser.email,
-             role: isAdmin ? 'admin' : 'user',
-           };
-           await setDoc(userDocRef, { email: newUserProfile.email, role: newUserProfile.role });
-           setUser(newUserProfile);
+            // This case might happen if a user is in auth but not firestore.
+            // For this app, we assume the login page handles user creation in firestore.
+            // If we still can't find a user, redirect to login.
+            router.push('/login');
         }
       } else {
         setUser(null);
+        router.push('/login');
       }
       setLoading(false);
     });
 
     return () => unsubscribe();
-  }, []);
-
-  useEffect(() => {
-    if (loading) return; // Don't do anything until the auth state is resolved.
-
-    const isAuthPage = pathname === '/login';
-
-    // If user is not logged in, and not on the login page, redirect to login
-    if (!user && !isAuthPage) {
-      router.push('/login');
-    }
-
-    // If user is logged in and on the login page, redirect to the app's main page
-    if (user && isAuthPage) {
-       router.push('/');
-    }
-  }, [user, loading, pathname, router]);
-
+  }, [router]);
 
   const logout = async () => {
     await auth.signOut();
-    router.push('/login'); // Force redirect to login on logout.
+    setUser(null);
+    router.push('/login');
   };
   
-  // While loading authentication state, or if a redirect is imminent, show a full-screen loader.
-  // This prevents the "flash" of content or a white screen.
-  const isAuthPage = pathname === '/login';
-  if (loading || (!user && !isAuthPage) || (user && isAuthPage)) {
+  if (loading) {
      return (
         <div className="flex min-h-screen items-center justify-center bg-background">
             <Loader2 className="size-8 animate-spin text-primary" />
         </div>
     );
   }
+  
+  // If not loading and no user, the effect above should have already redirected.
+  // This prevents rendering children in a state where user is null.
+  if (!user) {
+    return (
+        <div className="flex min-h-screen items-center justify-center bg-background">
+            <Loader2 className="size-8 animate-spin text-primary" />
+        </div>
+    );
+  }
+
 
   return (
     <AuthContext.Provider value={{ user, loading, logout }}>
@@ -102,9 +92,5 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 }
 
 export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === null) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
+  return useContext(AuthContext);
 };
