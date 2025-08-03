@@ -91,7 +91,7 @@ export default function DashboardPage() {
        setUsers(userList);
 
 
-    } catch (err) => {
+    } catch (err) {
       console.error(err);
     } finally {
       setLoading(false);
