@@ -190,8 +190,6 @@ export default function GraficosPage() {
                         <SelectItem value="Giro Freezer 2">Giro Freezer 2</SelectItem>
                         <SelectItem value="Giro Freezer 3">Giro Freezer 3</SelectItem>
                         <SelectItem value="Giro Freezer 4">Giro Freezer 4</SelectItem>
-                        <SelectItem value="Giro Freezer 5">Giro Freezer 5</SelectItem>
-                        <SelectItem value="Giro Freezer 6">Giro Freezer 6</SelectItem>
                     </SelectGroup>
                     <SelectGroup>
                         <SelectLabel>Túneis</SelectLabel>
@@ -199,9 +197,6 @@ export default function GraficosPage() {
                         <SelectItem value="Túnel 2">Túnel 2</SelectItem>
                         <SelectItem value="Túnel 3">Túnel 3</SelectItem>
                         <SelectItem value="Túnel 4">Túnel 4</SelectItem>
-                        <SelectItem value="Túnel 5">Túnel 5</SelectItem>
-                        <SelectItem value="Túnel 6">Túnel 6</SelectItem>
-                        <SelectItem value="Túnel 7">Túnel 7</SelectItem>
                     </SelectGroup>
                 </SelectContent>
               </Select>

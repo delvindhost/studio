@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState } from 'react';
@@ -193,12 +194,10 @@ export default function RegistrarPage() {
                         <SelectContent>
                             <SelectGroup>
                                <SelectLabel>Giros Freezer</SelectLabel>
-                                <option value="Giro Freezer 1">Giro Freezer 1</option>
-                                <option value="Giro Freezer 2">Giro Freezer 2</option>
-                                <option value="Giro Freezer 3">Giro Freezer 3</option>
-                                <option value="Giro Freezer 4">Giro Freezer 4</option>
-                                <option value="Giro Freezer 5">Giro Freezer 5</option>
-                                <option value="Giro Freezer 6">Giro Freezer 6</option>
+                                <SelectItem value="Giro Freezer 1">Giro Freezer 1</SelectItem>
+                                <SelectItem value="Giro Freezer 2">Giro Freezer 2</SelectItem>
+                                <SelectItem value="Giro Freezer 3">Giro Freezer 3</SelectItem>
+                                <SelectItem value="Giro Freezer 4">Giro Freezer 4</SelectItem>
                             </SelectGroup>
                             <SelectGroup>
                                 <SelectLabel>Túneis</SelectLabel>
@@ -206,9 +205,6 @@ export default function RegistrarPage() {
                                 <SelectItem value="Túnel 2">Túnel 2</SelectItem>
                                 <SelectItem value="Túnel 3">Túnel 3</SelectItem>
                                 <SelectItem value="Túnel 4">Túnel 4</SelectItem>
-                                <SelectItem value="Túnel 5">Túnel 5</SelectItem>
-                                <SelectItem value="Túnel 6">Túnel 6</SelectItem>
-                                <SelectItem value="Túnel 7">Túnel 7</SelectItem>
                             </SelectGroup>
                             <SelectGroup>
                                 <SelectLabel>Cortes</SelectLabel>
