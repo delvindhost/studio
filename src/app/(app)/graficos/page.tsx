@@ -124,7 +124,7 @@ export default function GraficosPage() {
     return Object.values(data).map(item => ({
         name: item.name,
         'Temperatura Média': parseFloat((item.total / item.count).toFixed(2))
-    })).sort((a,b) => a['Temperatura Média'] - b['Temperatura Média']);
+    })).sort((a,b) => a.name.localeCompare(b.name));
   }, [registros]);
 
   const dadosGraficoLocal = useMemo(() => {
@@ -242,9 +242,10 @@ export default function GraficosPage() {
                                 {produtosOptions.map((p) => (
                                 <CommandItem
                                     key={p.value}
-                                    value={p.value}
+                                    value={p.label}
                                     onSelect={(currentValue) => {
-                                      setProdutoCodigo(currentValue === produtoCodigo ? "todos" : currentValue)
+                                      const selectedOption = produtosOptions.find(opt => opt.label.toLowerCase() === currentValue.toLowerCase());
+                                      setProdutoCodigo(selectedOption ? selectedOption.value : "todos")
                                       setOpen(false)
                                     }}
                                 >
@@ -289,7 +290,7 @@ export default function GraficosPage() {
                         <BarChart data={dadosGraficoProduto} layout="vertical" margin={{ top: 5, right: 30, left: 100, bottom: 5 }}>
                             <CartesianGrid strokeDasharray="3 3" />
                             <XAxis type="number" />
-                            <YAxis dataKey="name" type="category" width={150} interval={0} />
+                            <YAxis dataKey="name" type="category" width={150} interval={0} tick={{ fontSize: 12 }} />
                             <Tooltip />
                             <Bar dataKey="Temperatura Média" fill="hsl(var(--primary))" />
                         </BarChart>
