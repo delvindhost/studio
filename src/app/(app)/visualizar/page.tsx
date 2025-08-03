@@ -6,6 +6,7 @@ import { collection, query, where, getDocs, orderBy, Timestamp, doc, deleteDoc }
 import { db } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from '@/components/ui/select';
@@ -22,7 +23,7 @@ import {
 } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { Loader2, Filter, FileDown, FileText, MapPin, Barcode, Clock, Thermometer, Snowflake, Tag, Play, Pause, StopCircle, Trash2, ChevronsUpDown, Check, ChevronDown, User } from 'lucide-react';
+import { Loader2, Filter, FileDown, FileText, MapPin, Barcode, Clock, Thermometer, Snowflake, Tag, Play, Pause, StopCircle, Trash2, ChevronsUpDown, Check, ChevronDown, User, LayoutGrid, Rows3 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -77,6 +78,8 @@ export default function VisualizarPage() {
   const [success, setSuccess] = useState<string | null>(null);
   
   const [isFilterVisible, setIsFilterVisible] = useState(false);
+  const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
+
 
   // --- Combobox state ---
   const [open, setOpen] = useState(false)
@@ -422,17 +425,29 @@ export default function VisualizarPage() {
            </CollapsibleContent>
          </Collapsible>
          <CardContent>
-            <div className="flex flex-wrap gap-4 pt-4 border-t">
-              <Button onClick={carregarRegistros} disabled={loading}>
-                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Filter className="mr-2 h-4 w-4" />}
-                Filtrar
-              </Button>
-              <Button variant="outline" onClick={exportarExcel} disabled={loading || registros.length === 0}>
-                  <FileDown className="mr-2 h-4 w-4" /> Exportar Excel
-              </Button>
-              <Button variant="outline" onClick={exportarPDF} disabled={loading || registros.length === 0}>
-                  <FileText className="mr-2 h-4 w-4" /> Exportar PDF
-              </Button>
+            <div className="flex flex-wrap items-center gap-4 pt-4 border-t">
+                <div className='flex-grow'>
+                    <Button onClick={carregarRegistros} disabled={loading}>
+                        {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Filter className="mr-2 h-4 w-4" />}
+                        Filtrar
+                    </Button>
+                </div>
+                <div className='flex items-center gap-2'>
+                    <Button variant={viewMode === 'cards' ? 'secondary' : 'ghost'} size="icon" onClick={() => setViewMode('cards')} disabled={loading}>
+                        <LayoutGrid className="h-4 w-4" />
+                    </Button>
+                     <Button variant={viewMode === 'table' ? 'secondary' : 'ghost'} size="icon" onClick={() => setViewMode('table')} disabled={loading}>
+                        <Rows3 className="h-4 w-4" />
+                    </Button>
+                </div>
+                <div className='flex items-center gap-2'>
+                    <Button variant="outline" onClick={exportarExcel} disabled={loading || registros.length === 0}>
+                        <FileDown className="mr-2 h-4 w-4" /> Excel
+                    </Button>
+                    <Button variant="outline" onClick={exportarPDF} disabled={loading || registros.length === 0}>
+                        <FileText className="mr-2 h-4 w-4" /> PDF
+                    </Button>
+                </div>
             </div>
          </CardContent>
       </Card>
@@ -441,7 +456,7 @@ export default function VisualizarPage() {
       {error && !loading && <p className="text-center text-red-500 py-4">{error}</p>}
       {success && !loading && <p className="text-center text-green-500 py-4">{success}</p>}
       
-      {!loading && registros.length > 0 && (
+      {!loading && registros.length > 0 && viewMode === 'cards' && (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {registros.map((reg) => (
             <Card key={reg.id} className="shadow-lg flex flex-col">
@@ -524,6 +539,81 @@ export default function VisualizarPage() {
           ))}
         </div>
       )}
+
+      {!loading && registros.length > 0 && viewMode === 'table' && (
+        <Card>
+            <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Data/Hora</TableHead>
+                                <TableHead>Local</TableHead>
+                                <TableHead>Produto</TableHead>
+                                <TableHead>Turno</TableHead>
+                                <TableHead>Tipo</TableHead>
+                                <TableHead>Estado</TableHead>
+                                <TableHead className="text-right">T. Início (°C)</TableHead>
+                                <TableHead className="text-right">T. Meio (°C)</TableHead>
+                                <TableHead className="text-right">T. Fim (°C)</TableHead>
+                                {canDeleteRecords && <TableHead className="text-center">Ações</TableHead>}
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {registros.map((reg) => (
+                                <TableRow key={reg.id}>
+                                    <TableCell>
+                                        <div className="font-medium">{reg.dataManual}</div>
+                                        <div className="text-xs text-muted-foreground">{reg.horarioManual}</div>
+                                    </TableCell>
+                                    <TableCell>{reg.local}</TableCell>
+                                    <TableCell>
+                                        <div className="font-medium">{reg.produto}</div>
+                                        <div className="text-xs text-muted-foreground">Cód: {reg.codigo || 'N/A'}</div>
+                                    </TableCell>
+                                    <TableCell>{reg.turno}</TableCell>
+                                    <TableCell>{reg.tipo}</TableCell>
+                                    <TableCell>{reg.estado}</TableCell>
+                                    <TableCell className="text-right">{reg.temperaturas.inicio.toFixed(1)}</TableCell>
+                                    <TableCell className="text-right">{reg.temperaturas.meio.toFixed(1)}</TableCell>
+                                    <TableCell className="text-right">{reg.temperaturas.fim.toFixed(1)}</TableCell>
+                                    {canDeleteRecords && (
+                                      <TableCell className="text-center">
+                                          <AlertDialog>
+                                            <AlertDialogTrigger asChild>
+                                                <Button variant="ghost" size="icon">
+                                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                                </Button>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                              <AlertDialogHeader>
+                                                <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                  Essa ação não pode ser desfeita. Isso excluirá permanentemente este registro.
+                                                </AlertDialogDescription>
+                                              </AlertDialogHeader>
+                                              <AlertDialogFooter>
+                                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                <AlertDialogAction
+                                                  onClick={() => handleDeleteRegistro(reg.id)}
+                                                  className='bg-destructive hover:bg-destructive/90'
+                                                >
+                                                  Sim, excluir
+                                                </AlertDialogAction>
+                                              </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                          </AlertDialog>
+                                      </TableCell>
+                                    )}
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </div>
+            </CardContent>
+        </Card>
+      )}
+
     </div>
   );
 }
