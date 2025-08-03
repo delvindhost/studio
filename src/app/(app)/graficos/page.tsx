@@ -494,8 +494,8 @@ export default function GraficosPage() {
                             <Tooltip />
                             <Legend />
                             <Bar dataKey="Início" fill="#4B0082" />
-                            <Bar dataKey="Meio" fill="#8A2BE2" />
-                            <Bar dataKey="Fim" fill="#9370DB" />
+                            <Bar dataKey="Meio" fill="#DC2626" />
+                            <Bar dataKey="Fim" fill="#FBBF24" />
                         </BarChart>
                     </ResponsiveContainer>
                 </CardContent>
@@ -514,8 +514,8 @@ export default function GraficosPage() {
                             <Tooltip />
                             <Legend />
                             <Line type="monotone" dataKey="Início" stroke="#4B0082" activeDot={{ r: 8 }} />
-                            <Line type="monotone" dataKey="Meio" stroke="#8A2BE2" />
-                            <Line type="monotone" dataKey="Fim" stroke="#9370DB" />
+                            <Line type="monotone" dataKey="Meio" stroke="#DC2626" />
+                            <Line type="monotone" dataKey="Fim" stroke="#FBBF24" />
                         </LineChart>
                     </ResponsiveContainer>
                 </CardContent>
