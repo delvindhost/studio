@@ -2,8 +2,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { collection, getDocs, addDoc, doc, setDoc, deleteDoc } from 'firebase/firestore';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { collection, getDocs, doc, setDoc, deleteDoc, updateDoc } from 'firebase/firestore';
+import { createUserWithEmailAndPassword, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import { db, auth as mainAuth } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,6 +17,14 @@ import {
   DialogTrigger,
   DialogFooter,
   DialogClose,
+} from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -25,10 +33,9 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/dialog';
+} from '@/components/ui/alert-dialog';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, UserPlus, Users, ShieldCheck, KeyRound, User, Trash2 } from 'lucide-react';
+import { Loader2, UserPlus, Users, ShieldCheck, KeyRound, User, Trash2, MoreVertical, Edit } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 
@@ -60,6 +67,9 @@ export default function UsuariosPage() {
   // State for the dialog
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
+  
+  // Form state
   const [nome, setNome] = useState('');
   const [matricula, setMatricula] = useState('');
   const [senha, setSenha] = useState('');
@@ -82,7 +92,6 @@ export default function UsuariosPage() {
       const querySnapshot = await getDocs(collection(db, 'users'));
       const userList: UserProfile[] = [];
       querySnapshot.forEach((doc) => {
-        // Exclude the admin user from the list
         if (doc.data().role !== 'admin') {
             userList.push({ id: doc.id, ...doc.data() } as UserProfile);
         }
@@ -123,9 +132,33 @@ export default function UsuariosPage() {
     setMatricula('');
     setSenha('');
     setPermissions([]);
+    setEditingUser(null);
     setIsSubmitting(false);
     setIsDialogOpen(false);
   };
+
+  const openEditDialog = (user: UserProfile) => {
+    setEditingUser(user);
+    setNome(user.nome);
+    setMatricula(user.matricula);
+    setPermissions(user.permissions);
+    setSenha(''); // Senha não é preenchida por segurança
+    setIsDialogOpen(true);
+  };
+
+  const openAddDialog = () => {
+    resetForm();
+    setEditingUser(null);
+    setIsDialogOpen(true);
+  }
+
+  const handleFormSubmit = async () => {
+    if (editingUser) {
+      await handleUpdateUser();
+    } else {
+      await handleAddUser();
+    }
+  }
 
   const handleAddUser = async () => {
     if (!nome || !matricula || !senha || permissions.length === 0) {
@@ -137,11 +170,9 @@ export default function UsuariosPage() {
     setSuccess(null);
 
     try {
-      // Create user in Firebase Auth
       const userCredential = await createUserWithEmailAndPassword(mainAuth, `${matricula}@local.user`, senha);
       const user = userCredential.user;
 
-      // Store user profile in Firestore
       const userDocRef = doc(db, 'users', user.uid);
       await setDoc(userDocRef, {
         nome,
@@ -152,7 +183,7 @@ export default function UsuariosPage() {
 
       showAlert('Usuário adicionado com sucesso!', 'success');
       resetForm();
-      fetchUsers(); // Refresh user list
+      fetchUsers();
     } catch (err: any) {
         if (err.code === 'auth/email-already-in-use') {
             showAlert('Erro: A matrícula informada já está em uso.', 'error');
@@ -166,11 +197,63 @@ export default function UsuariosPage() {
       setIsSubmitting(false);
     }
   };
+
+  const handleUpdateUser = async () => {
+     if (!editingUser || !nome || !matricula || permissions.length === 0) {
+      showAlert('Por favor, preencha nome, matrícula e selecione ao menos uma permissão.', 'error');
+      return;
+    }
+     if (senha && senha.length < 6) {
+      showAlert('A nova senha deve ter no mínimo 6 caracteres.', 'error');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setError(null);
+    setSuccess(null);
+    
+    try {
+        const userDocRef = doc(db, 'users', editingUser.id);
+        
+        // A atualização de matrícula e senha no Firebase Auth pelo admin-sdk seria o ideal,
+        // mas é complexo de fazer no lado do cliente.
+        // A abordagem aqui é atualizar o Firestore. A mudança de matrícula exigiria recriar o usuário.
+        if (editingUser.matricula !== matricula) {
+           showAlert('A alteração de matrícula não é permitida diretamente. Para isso, remova e crie o usuário novamente.', 'error');
+           setIsSubmitting(false);
+           return;
+        }
+
+        await updateDoc(userDocRef, {
+            nome,
+            permissions,
+        });
+
+        // Não é possível atualizar a senha de outro usuário diretamente pelo client-side SDK de forma segura.
+        // A mensagem abaixo informa o usuário sobre a limitação.
+        let successMsg = 'Dados do usuário atualizados com sucesso!';
+        if (senha) {
+           successMsg += ' A alteração de senha por aqui não é suportada, peça ao usuário para redefini-la.'
+        }
+        
+        showAlert(successMsg, 'success');
+        resetForm();
+        fetchUsers();
+
+    } catch (err) {
+        console.error(err);
+        showAlert('Erro ao atualizar usuário.', 'error');
+    } finally {
+        setIsSubmitting(false);
+    }
+  }
   
   const handleDeleteUser = async (userIdToDelete: string) => {
     try {
+      // É preciso ter uma função de backend (Cloud Function) para excluir o usuário do Auth.
+      // Do cliente, só conseguimos remover do Firestore.
       await deleteDoc(doc(db, 'users', userIdToDelete));
-      showAlert('Usuário removido com sucesso!', 'success');
+      showAlert('Usuário removido da base de dados! (A autenticação precisa ser removida manualmente no console do Firebase)', 'success');
       fetchUsers();
     } catch (error) {
         showAlert('Erro ao remover usuário.', 'error');
@@ -200,13 +283,15 @@ export default function UsuariosPage() {
         <h1 className="text-2xl font-bold text-primary">Gerenciamento de Usuários</h1>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button>
+            <Button onClick={openAddDialog}>
               <UserPlus className="mr-2 h-4 w-4" /> Adicionar Usuário
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
+          <DialogContent className="sm:max-w-[425px]" onInteractOutside={(e) => {
+              if (isSubmitting) e.preventDefault();
+          }}>
             <DialogHeader>
-              <DialogTitle>Novo Usuário</DialogTitle>
+              <DialogTitle>{editingUser ? 'Editar Usuário' : 'Novo Usuário'}</DialogTitle>
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="space-y-2">
@@ -215,11 +300,12 @@ export default function UsuariosPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="matricula">Matrícula</Label>
-                <Input id="matricula" value={matricula} onChange={(e) => setMatricula(e.target.value)} placeholder="Matrícula de login" disabled={isSubmitting}/>
+                <Input id="matricula" value={matricula} onChange={(e) => setMatricula(e.target.value)} placeholder="Matrícula de login" disabled={isSubmitting || !!editingUser}/>
+                 {editingUser && <p className='text-xs text-muted-foreground'>A matrícula não pode ser alterada.</p>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="senha">Senha</Label>
-                <Input id="senha" type="password" value={senha} onChange={(e) => setSenha(e.target.value)} placeholder="Mínimo de 6 caracteres" disabled={isSubmitting}/>
+                <Input id="senha" type="password" value={senha} onChange={(e) => setSenha(e.target.value)} placeholder={editingUser ? "Deixe em branco para não alterar" : "Mínimo de 6 caracteres"} disabled={isSubmitting}/>
               </div>
               <div className="space-y-3">
                  <Label>Permissões de Acesso</Label>
@@ -245,13 +331,13 @@ export default function UsuariosPage() {
             </div>
             <DialogFooter>
                <DialogClose asChild>
-                <Button type="button" variant="outline" onClick={resetForm}>
+                <Button type="button" variant="outline" onClick={resetForm} disabled={isSubmitting}>
                   Cancelar
                 </Button>
               </DialogClose>
-              <Button onClick={handleAddUser} disabled={isSubmitting}>
+              <Button onClick={handleFormSubmit} disabled={isSubmitting}>
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Salvar Usuário
+                {editingUser ? 'Salvar Alterações' : 'Criar Usuário'}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -275,29 +361,45 @@ export default function UsuariosPage() {
                         <p className="text-sm text-muted-foreground flex items-center gap-2"><KeyRound className='h-4 w-4'/> Matrícula: {user.matricula}</p>
                         <p className="text-sm text-muted-foreground flex items-center gap-2"><ShieldCheck className='h-4 w-4'/> Permissões: {user.permissions.map(p => navItems.find(n => n.href === p)?.label || p).join(', ')}</p>
                     </div>
+
                     <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Essa ação não pode ser desfeita. Isso excluirá permanentemente o usuário.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => handleDeleteUser(user.id)}
-                            className='bg-destructive hover:bg-destructive/90'
-                          >
-                            Sim, excluir
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                  <MoreVertical className="h-4 w-4" />
+                              </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => openEditDialog(user)}>
+                                <Edit className="mr-2 h-4 w-4" />
+                                <span>Editar</span>
+                              </DropdownMenuItem>
+                              <AlertDialogTrigger asChild>
+                                <DropdownMenuItem className='text-destructive focus:text-destructive focus:bg-destructive/10'>
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    <span>Excluir</span>
+                                </DropdownMenuItem>
+                               </AlertDialogTrigger>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                            <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                Essa ação não pode ser desfeita. Isso excluirá permanentemente o usuário da base de dados, mas a conta de autenticação precisará ser removida manualmente.
+                            </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction
+                                onClick={() => handleDeleteUser(user.id)}
+                                className='bg-destructive hover:bg-destructive/90'
+                            >
+                                Sim, excluir
+                            </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
                     </AlertDialog>
                 </div>
               ))}
