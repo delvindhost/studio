@@ -3,7 +3,8 @@
 
 import { useState } from 'react';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { auth, db } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import {
@@ -30,14 +31,32 @@ export default function LoginPage() {
     setError(null);
     setLoading(true);
 
-    // Check if loginId is an email or a registration number (matricula)
-    const isEmail = loginId.includes('@');
-    const emailToLogin = isEmail ? loginId : `${loginId}@local.user`;
-
-
     try {
+      const isEmail = loginId.includes('@');
+      let emailToLogin = '';
+
+      if (isEmail) {
+        emailToLogin = loginId;
+      } else {
+        // Se não for um e-mail, é uma matrícula. Busque o usuário no Firestore.
+        const usersRef = collection(db, 'users');
+        const q = query(usersRef, where('matricula', '==', loginId));
+        const querySnapshot = await getDocs(q);
+
+        if (querySnapshot.empty) {
+          setError('Nenhum usuário encontrado com esta matrícula.');
+          setLoading(false);
+          return;
+        }
+        
+        // Assume que a matrícula é única
+        const userData = querySnapshot.docs[0].data();
+        emailToLogin = `${userData.matricula}@local.user`;
+      }
+      
       await signInWithEmailAndPassword(auth, emailToLogin, password);
       router.push('/');
+
     } catch (err: any) {
         if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found') {
              setError('Falha no login. Verifique suas credenciais.');
