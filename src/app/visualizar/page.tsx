@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from '@/components/ui/select';
-import { Loader2, Calendar, Filter, FileDown, FileText } from 'lucide-react';
+import { Loader2, Calendar, Filter, FileDown, FileText, MapPin, Barcode, Clock, Thermometer, Snowflake, Tag, Play, Pause, Stop, Trash2 } from 'lucide-react';
 
 // Tipos
 type Registro = {
@@ -181,23 +181,56 @@ export default function VisualizarPage() {
       {!loading && registros.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {registros.map((reg) => (
-            <Card key={reg.id} className="shadow-lg">
-              <CardHeader>
-                <CardTitle className="text-lg text-primary">{reg.produto}</CardTitle>
+            <Card key={reg.id} className="shadow-lg flex flex-col">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg text-primary truncate">
+                  {reg.produto}
+                </CardTitle>
+                <p className="text-sm text-muted-foreground pt-1">{reg.local}</p>
               </CardHeader>
-              <CardContent className="text-sm space-y-2">
-                <p><strong>Local:</strong> {reg.local}</p>
-                <p><strong>Código:</strong> {reg.codigo}</p>
-                <p><strong>Turno:</strong> {reg.turno}º</p>
-                <p><strong>Tipo/Estado:</strong> {reg.tipo} - {reg.estado}</p>
-                <p><strong>Data:</strong> {reg.dataManual}</p>
-                <p><strong>Horário:</strong> {reg.horarioManual}</p>
-                <div className="pt-2">
-                  <p><strong>Temp. Início:</strong> {reg.temperaturas.inicio.toFixed(1).replace('.', ',')}°C</p>
-                  <p><strong>Temp. Meio:</strong> {reg.temperaturas.meio.toFixed(1).replace('.', ',')}°C</p>
-                  <p><strong>Temp. Fim:</strong> {reg.temperaturas.fim.toFixed(1).replace('.', ',')}°C</p>
+              <CardContent className="flex-grow text-sm space-y-3">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Barcode className="h-4 w-4" />
+                  <span><strong>Código:</strong> {reg.codigo || 'N/A'}</span>
+                </div>
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Clock className="h-4 w-4" />
+                   <span><strong>Turno:</strong> {reg.turno}º</span>
+                </div>
+                 <div className="flex items-center gap-2 text-muted-foreground">
+                   <Tag className="h-4 w-4" /> 
+                   <span><strong>Tipo:</strong> {reg.tipo}</span>
+                </div>
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Snowflake className="h-4 w-4" />
+                  <span><strong>Estado:</strong> {reg.estado}</span>
+                </div>
+
+                <div className="pt-3 space-y-2">
+                  <h4 className="font-semibold text-primary">Temperaturas</h4>
+                  <div className="flex items-center gap-2">
+                    <Play className="h-4 w-4 text-green-600"/>
+                    <span>Início: <strong>{reg.temperaturas.inicio.toFixed(1).replace('.', ',')}°C</strong></span>
+                  </div>
+                   <div className="flex items-center gap-2">
+                    <Pause className="h-4 w-4 text-yellow-600"/>
+                    <span>Meio: <strong>{reg.temperaturas.meio.toFixed(1).replace('.', ',')}°C</strong></span>
+                  </div>
+                   <div className="flex items-center gap-2">
+                    <Stop className="h-4 w-4 text-red-600"/>
+                    <span>Fim: <strong>{reg.temperaturas.fim.toFixed(1).replace('.', ',')}°C</strong></span>
+                  </div>
                 </div>
               </CardContent>
+              <div className="p-6 pt-0 mt-auto text-xs text-muted-foreground flex justify-between items-center">
+                  <div>
+                    <p><strong>Data:</strong> {reg.dataManual}</p>
+                    <p><strong>Horário:</strong> {reg.horarioManual}</p>
+                  </div>
+                  <Button variant="ghost" size="icon">
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+              </div>
             </Card>
           ))}
         </div>
