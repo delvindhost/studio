@@ -1,5 +1,10 @@
-import LoginPage from "./login/page";
+import AppLayout from "./(app)/layout";
+import DashboardPage from "./(app)/page";
 
 export default function Home() {
-  return <LoginPage />;
+  return (
+    <AppLayout>
+      <DashboardPage />
+    </AppLayout>
+  );
 }
