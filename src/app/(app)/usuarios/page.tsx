@@ -50,10 +50,14 @@ type UserProfile = {
 };
 
 const navItems = [
+  { href: "/", label: "Dashboard" },
   { href: "/registrar", label: "Registrar" },
   { href: "/visualizar", label: "Visualizar" },
   { href: "/graficos", label: "Gráficos" },
-  { href: "/", label: "Dashboard" },
+];
+
+const specialPermissions = [
+    { id: 'delete_records', label: 'Pode Excluir Registros' }
 ];
 
 
@@ -163,8 +167,8 @@ export default function UsuariosPage() {
   }
 
   const handleAddUser = async () => {
-    if (!nome || !matricula || !senha || permissions.length === 0) {
-      showAlert('Por favor, preencha todos os campos e selecione ao menos uma permissão.', 'error');
+    if (!nome || !matricula || !senha ) {
+      showAlert('Por favor, preencha nome, matrícula e senha.', 'error');
       return;
     }
     setIsSubmitting(true);
@@ -201,8 +205,8 @@ export default function UsuariosPage() {
   };
 
   const handleUpdateUser = async () => {
-     if (!editingUser || !nome || !matricula || permissions.length === 0) {
-      showAlert('Por favor, preencha nome, matrícula e selecione ao menos uma permissão.', 'error');
+     if (!editingUser || !nome || !matricula) {
+      showAlert('Por favor, preencha nome e matrícula.', 'error');
       return;
     }
      if (senha && senha.length < 6) {
@@ -217,9 +221,6 @@ export default function UsuariosPage() {
     try {
         const userDocRef = doc(db, 'users', editingUser.id);
         
-        // A atualização de matrícula e senha no Firebase Auth pelo admin-sdk seria o ideal,
-        // mas é complexo de fazer no lado do cliente.
-        // A abordagem aqui é atualizar o Firestore. A mudança de matrícula exigiria recriar o usuário.
         if (editingUser.matricula !== matricula) {
            showAlert('A alteração de matrícula não é permitida diretamente. Para isso, remova e crie o usuário novamente.', 'error');
            setIsSubmitting(false);
@@ -231,8 +232,6 @@ export default function UsuariosPage() {
             permissions,
         });
 
-        // Não é possível atualizar a senha de outro usuário diretamente pelo client-side SDK de forma segura.
-        // A mensagem abaixo informa o usuário sobre a limitação.
         let successMsg = 'Dados do usuário atualizados com sucesso!';
         if (senha) {
            successMsg += ' A alteração de senha por aqui não é suportada, peça ao usuário para redefini-la.'
@@ -252,15 +251,21 @@ export default function UsuariosPage() {
   
   const handleDeleteUser = async (userIdToDelete: string) => {
     try {
-      // É preciso ter uma função de backend (Cloud Function) para excluir o usuário do Auth.
-      // Do cliente, só conseguimos remover do Firestore.
       await deleteDoc(doc(db, 'users', userIdToDelete));
-      showAlert('Usuário removido da base de dados! (A autenticação precisa ser removida manualmente no console do Firebase)', 'success');
+      showAlert('Usuário removido da base de dados! (A autenticação precisa ser removida manually no console do Firebase)', 'success');
       fetchUsers();
     } catch (error) {
         showAlert('Erro ao remover usuário.', 'error');
         console.error("Error deleting user: ", error);
     }
+  }
+
+  const getPermissionLabel = (p: string) => {
+    const navItem = navItems.find(n => n.href === p);
+    if(navItem) return navItem.label;
+    const specialPerm = specialPermissions.find(sp => sp.id === p);
+    if(specialPerm) return specialPerm.label;
+    return p;
   }
 
   if (authLoading || loading) {
@@ -310,7 +315,7 @@ export default function UsuariosPage() {
                 <Input id="senha" type="password" value={senha} onChange={(e) => setSenha(e.target.value)} placeholder={editingUser ? "Deixe em branco para não alterar" : "Mínimo de 6 caracteres"} disabled={isSubmitting}/>
               </div>
               <div className="space-y-3">
-                 <Label>Permissões de Acesso</Label>
+                 <Label>Permissões de Acesso às Páginas</Label>
                  <div className='space-y-2'>
                     {navItems.map((item) => (
                         <div key={item.href} className="flex items-center space-x-2">
@@ -322,6 +327,27 @@ export default function UsuariosPage() {
                             />
                             <label
                                 htmlFor={`perm-${item.href}`}
+                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                            >
+                                {item.label}
+                            </label>
+                        </div>
+                    ))}
+                 </div>
+              </div>
+               <div className="space-y-3 pt-4 border-t">
+                 <Label>Permissões Especiais</Label>
+                 <div className='space-y-2'>
+                    {specialPermissions.map((item) => (
+                        <div key={item.id} className="flex items-center space-x-2">
+                            <Checkbox 
+                                id={`perm-${item.id}`} 
+                                checked={permissions.includes(item.id)}
+                                onCheckedChange={() => handlePermissionChange(item.id)}
+                                disabled={isSubmitting}
+                            />
+                            <label
+                                htmlFor={`perm-${item.id}`}
                                 className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                             >
                                 {item.label}
@@ -361,7 +387,7 @@ export default function UsuariosPage() {
                     <div className='space-y-1'>
                         <p className="font-semibold flex items-center gap-2"><User className='h-4 w-4 text-primary'/> {user.nome}</p>
                         <p className="text-sm text-muted-foreground flex items-center gap-2"><KeyRound className='h-4 w-4'/> Matrícula: {user.matricula}</p>
-                        <p className="text-sm text-muted-foreground flex items-center gap-2"><ShieldCheck className='h-4 w-4'/> Permissões: {user.permissions.map(p => navItems.find(n => n.href === p)?.label || p).join(', ')}</p>
+                        <p className="text-sm text-muted-foreground flex items-center gap-2"><ShieldCheck className='h-4 w-4'/> Permissões: {user.permissions.map(p => getPermissionLabel(p)).join(', ')}</p>
                     </div>
 
                     <AlertDialog>
@@ -389,7 +415,7 @@ export default function UsuariosPage() {
                             <AlertDialogHeader>
                             <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
                             <AlertDialogDescription>
-                                Essa ação não pode ser desfeita. Isso excluirá permanentemente o usuário da base de dados, mas a conta de autenticação precisará ser removida manualmente.
+                                Essa ação não pode ser desfeita. Isso excluirá permanentemente o usuário da base de dados, mas a conta de autenticação precisará ser removida manualmente no console do Firebase.
                             </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>

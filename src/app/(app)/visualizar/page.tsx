@@ -110,6 +110,11 @@ export default function VisualizarPage() {
     return [{ value: 'todos', label: 'Todos os Produtos' }, ...filtered];
   }, [searchValue]);
 
+  const canDeleteRecords = useMemo(() => {
+    if (!userProfile) return false;
+    return userProfile.role === 'admin' || userProfile.permissions.includes('delete_records');
+  }, [userProfile]);
+
 
   const showAlert = (message: string, type: 'success' | 'error') => {
     if (type === 'success') {
@@ -488,7 +493,7 @@ export default function VisualizarPage() {
                     <p><strong>Data:</strong> {reg.dataManual}</p>
                     <p><strong>Horário:</strong> {reg.horarioManual}</p>
                   </div>
-                   {userProfile?.role === 'admin' && (
+                   {canDeleteRecords && (
                      <AlertDialog>
                       <AlertDialogTrigger asChild>
                          <Button variant="ghost" size="icon">
@@ -522,5 +527,3 @@ export default function VisualizarPage() {
     </div>
   );
 }
-
-    
