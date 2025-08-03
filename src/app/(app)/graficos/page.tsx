@@ -12,11 +12,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGr
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { BarChart, LineChart, XAxis, YAxis, CartesianGrid, Tooltip, Bar, Line, ResponsiveContainer, Legend } from 'recharts';
-import { Loader2, Filter, ChevronsUpDown, Check, FileText } from 'lucide-react';
+import { Loader2, Filter, ChevronsUpDown, Check, FileText, ChevronDown } from 'lucide-react';
 import { produtosPorCodigo } from '@/lib/produtos';
 import { cn } from '@/lib/utils';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible"
 
 // Tipos
 type Registro = {
@@ -51,6 +56,8 @@ export default function GraficosPage() {
   const [produtoCodigo, setProdutoCodigo] = useState('todos');
   const [turno, setTurno] = useState('todos');
   const [estado, setEstado] = useState('todos');
+
+  const [isFilterVisible, setIsFilterVisible] = useState(false);
 
   // Refs for charts
   const graficoProdutoRef = useRef<HTMLDivElement>(null);
@@ -95,6 +102,7 @@ export default function GraficosPage() {
   const carregarDados = async () => {
     setLoading(true);
     setError(null);
+    setIsFilterVisible(false); // Recolhe o filtro
     try {
       const inicio = new Date(`${dataInicio}T00:00:00`);
       const fim = new Date(`${dataFim}T23:59:59`);
@@ -245,173 +253,187 @@ export default function GraficosPage() {
       <h1 className="text-2xl font-bold text-primary">Análise de Temperaturas</h1>
       
       <Card>
-        <CardHeader>
-          <CardTitle>Filtros</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 items-end">
-             <div className="space-y-2">
-              <Label htmlFor="data-inicio">Data Inicial</Label>
-              <Input id="data-inicio" type="date" value={dataInicio} onChange={(e) => setDataInicio(e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="data-fim">Data Final</Label>
-              <Input id="data-fim" type="date" value={dataFim} onChange={(e) => setDataFim(e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="filtro-local">Local</Label>
-              <Select value={local} onValueChange={setLocal}>
-                <SelectTrigger id="filtro-local"><SelectValue placeholder="Todos" /></SelectTrigger>
-                <SelectContent className="max-h-72">
-                  <SelectItem value="todos">Todos os locais</SelectItem>
-                   <SelectGroup>
-                        <SelectLabel>Giros Freezer</SelectLabel>
-                        <SelectItem value="Giro Freezer 1">Giro Freezer 1</SelectItem>
-                        <SelectItem value="Giro Freezer 2">Giro Freezer 2</SelectItem>
-                        <SelectItem value="Giro Freezer 3">Giro Freezer 3</SelectItem>
-                        <SelectItem value="Giro Freezer 4">Giro Freezer 4</SelectItem>
-                    </SelectGroup>
-                    <SelectGroup>
-                        <SelectLabel>Túneis</SelectLabel>
-                        <SelectItem value="Túnel 1">Túnel 1</SelectItem>
-                        <SelectItem value="Túnel 2">Túnel 2</SelectItem>
-                        <SelectItem value="Túnel 3">Túnel 3</SelectItem>
-                        <SelectItem value="Túnel 4">Túnel 4</SelectItem>
-                    </SelectGroup>
-                     <SelectGroup>
-                        <SelectLabel>Cortes</SelectLabel>
-                        <SelectItem value="Cortes 1">Cortes 1</SelectItem>
-                        <SelectItem value="Cortes 2">Cortes 2</SelectItem>
-                        <SelectItem value="Rependura Cortes 1">Rependura Cortes 1</SelectItem>
-                        <SelectItem value="Rependura Cortes 2">Rependura Cortes 2</SelectItem>
-                    </SelectGroup>
-                     <SelectGroup>
-                        <SelectLabel>Embalagem</SelectLabel>
-                        <SelectItem value="Embalagem Secundária">Embalagem Secundária</SelectItem>
-                    </SelectGroup>
-                    <SelectGroup>
-                        <SelectLabel>Expedição</SelectLabel>
-                        <SelectItem value="Expedição 1">Expedição 1</SelectItem>
-                        <SelectItem value="Expedição 2">Expedição 2</SelectItem>
-                    </SelectGroup>
+        <Collapsible open={isFilterVisible} onOpenChange={setIsFilterVisible}>
+          <CardHeader>
+             <CollapsibleTrigger asChild>
+                <div className='flex items-center justify-between cursor-pointer'>
+                  <CardTitle>Filtros</CardTitle>
+                   <Button variant="ghost" size="sm" className="w-auto">
+                      <Filter className="mr-2 h-4 w-4" />
+                       {isFilterVisible ? 'Ocultar Filtros' : 'Exibir Filtros'}
+                       <ChevronDown className={cn("ml-2 h-4 w-4 transition-transform", isFilterVisible && "rotate-180")} />
+                    </Button>
+                </div>
+            </CollapsibleTrigger>
+          </CardHeader>
+          <CollapsibleContent>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 items-end">
+                <div className="space-y-2">
+                  <Label htmlFor="data-inicio">Data Inicial</Label>
+                  <Input id="data-inicio" type="date" value={dataInicio} onChange={(e) => setDataInicio(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="data-fim">Data Final</Label>
+                  <Input id="data-fim" type="date" value={dataFim} onChange={(e) => setDataFim(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="filtro-local">Local</Label>
+                  <Select value={local} onValueChange={setLocal}>
+                    <SelectTrigger id="filtro-local"><SelectValue placeholder="Todos" /></SelectTrigger>
+                    <SelectContent className="max-h-72">
+                      <SelectItem value="todos">Todos os locais</SelectItem>
+                      <SelectGroup>
+                            <SelectLabel>Giros Freezer</SelectLabel>
+                            <SelectItem value="Giro Freezer 1">Giro Freezer 1</SelectItem>
+                            <SelectItem value="Giro Freezer 2">Giro Freezer 2</SelectItem>
+                            <SelectItem value="Giro Freezer 3">Giro Freezer 3</SelectItem>
+                            <SelectItem value="Giro Freezer 4">Giro Freezer 4</SelectItem>
+                        </SelectGroup>
                         <SelectGroup>
-                        <SelectLabel>Paletização</SelectLabel>
-                        <SelectItem value="Paletização 1">Paletização 1</SelectItem>
-                        <SelectItem value="Paletização 2">Paletização 2</SelectItem>
-                    </SelectGroup>
-                    <SelectGroup>
-                        <SelectLabel>Outros</SelectLabel>
-                        <SelectItem value="Miudos">Miudos</SelectItem>
-                        <SelectItem value="Evisceração 1">Evisceração 1</SelectItem>
-                        <SelectItem value="Evisceração 2">Evisceração 2</SelectItem>
-                    </SelectGroup>
-                    <SelectGroup>
-                        <SelectLabel>Câmaras</SelectLabel>
-                        <SelectItem value="Câmara A">Câmara A</SelectItem>
-                        <SelectItem value="Câmara C">Câmara C</SelectItem>
-                        <SelectItem value="Câmara D">Câmara D</SelectItem>
-                        <SelectItem value="Câmara F">Câmara F</SelectItem>
-                    </SelectGroup>
-                </SelectContent>
-              </Select>
-            </div>
-             <div className="space-y-2">
-              <Label htmlFor="filtro-turno">Turno</Label>
-              <Select value={turno} onValueChange={setTurno}>
-                <SelectTrigger id="filtro-turno"><SelectValue placeholder="Todos" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos</SelectItem>
-                  <SelectItem value="1">1º Turno</SelectItem>
-                  <SelectItem value="2">2º Turno</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-             <div className="space-y-2">
-              <Label htmlFor="filtro-tipo">Mercado</Label>
-              <Select value={tipo} onValueChange={setTipo}>
-                <SelectTrigger id="filtro-tipo"><SelectValue placeholder="Todos" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos</SelectItem>
-                  <SelectItem value="MI">MI</SelectItem>
-                  <SelectItem value="ME">ME</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-             <div className="space-y-2">
-                <Label htmlFor="filtro-produto">Produto</Label>
-                 <Popover open={open} onOpenChange={setOpen}>
-                    <PopoverTrigger asChild>
-                        <Button
-                        variant="outline"
-                        role="combobox"
-                        aria-expanded={open}
-                        className="w-full justify-between"
-                        >
-                        {produtoCodigo === "todos"
-                            ? "Todos os Produtos"
-                            : produtosOptions.find((p) => p.value === produtoCodigo)?.label}
-                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                        </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[400px] p-0">
-                        <Command>
-                          <CommandInput 
-                            placeholder="Buscar produto..." 
-                            value={searchValue}
-                            onValueChange={setSearchValue}
-                          />
-                         <CommandList>
-                            <CommandEmpty>Nenhum produto encontrado.</CommandEmpty>
-                            <CommandGroup>
-                                {produtosOptions.map((p) => (
-                                <CommandItem
-                                    key={p.value}
-                                    value={p.label}
-                                    onSelect={(currentValue) => {
-                                      const allOptions = Object.entries(produtosPorCodigo).map(([codigo, { produto }]) => ({ value: codigo, label: `${codigo} - ${produto}` }));
-                                      const selectedOption = allOptions.find(opt => opt.label.toLowerCase() === currentValue.toLowerCase());
-                                      setProdutoCodigo(selectedOption ? selectedOption.value : "todos")
-                                      setOpen(false)
-                                    }}
-                                >
-                                    <Check
-                                    className={cn(
-                                        "mr-2 h-4 w-4",
-                                        produtoCodigo === p.value ? "opacity-100" : "opacity-0"
-                                    )}
-                                    />
-                                    {p.label}
-                                </CommandItem>
-                                ))}
-                            </CommandGroup>
-                         </CommandList>
-                        </Command>
-                    </PopoverContent>
-                </Popover>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="filtro-estado">Estado</Label>
-              <Select value={estado} onValueChange={setEstado}>
-                <SelectTrigger id="filtro-estado"><SelectValue placeholder="Todos" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos</SelectItem>
-                  <SelectItem value="Congelado">Congelado</SelectItem>
-                  <SelectItem value="Resfriado">Resfriado</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-          </div>
-          <div className="flex flex-wrap gap-4 mt-6">
-            <Button onClick={carregarDados} disabled={loading}>
-              {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Filter className="mr-2 h-4 w-4" />}
-              Atualizar Gráficos
-            </Button>
-             <Button variant="outline" onClick={exportarGraficosPDF} disabled={loading || registros.length === 0}>
-                <FileText className="mr-2 h-4 w-4" /> Exportar PDF
-            </Button>
-          </div>
-        </CardContent>
+                            <SelectLabel>Túneis</SelectLabel>
+                            <SelectItem value="Túnel 1">Túnel 1</SelectItem>
+                            <SelectItem value="Túnel 2">Túnel 2</SelectItem>
+                            <SelectItem value="Túnel 3">Túnel 3</SelectItem>
+                            <SelectItem value="Túnel 4">Túnel 4</SelectItem>
+                        </SelectGroup>
+                        <SelectGroup>
+                            <SelectLabel>Cortes</SelectLabel>
+                            <SelectItem value="Cortes 1">Cortes 1</SelectItem>
+                            <SelectItem value="Cortes 2">Cortes 2</SelectItem>
+                            <SelectItem value="Rependura Cortes 1">Rependura Cortes 1</SelectItem>
+                            <SelectItem value="Rependura Cortes 2">Rependura Cortes 2</SelectItem>
+                        </SelectGroup>
+                        <SelectGroup>
+                            <SelectLabel>Embalagem</SelectLabel>
+                            <SelectItem value="Embalagem Secundária">Embalagem Secundária</SelectItem>
+                        </SelectGroup>
+                        <SelectGroup>
+                            <SelectLabel>Expedição</SelectLabel>
+                            <SelectItem value="Expedição 1">Expedição 1</SelectItem>
+                            <SelectItem value="Expedição 2">Expedição 2</SelectItem>
+                        </SelectGroup>
+                            <SelectGroup>
+                            <SelectLabel>Paletização</SelectLabel>
+                            <SelectItem value="Paletização 1">Paletização 1</SelectItem>
+                            <SelectItem value="Paletização 2">Paletização 2</SelectItem>
+                        </SelectGroup>
+                        <SelectGroup>
+                            <SelectLabel>Outros</SelectLabel>
+                            <SelectItem value="Miudos">Miudos</SelectItem>
+                            <SelectItem value="Evisceração 1">Evisceração 1</SelectItem>
+                            <SelectItem value="Evisceração 2">Evisceração 2</SelectItem>
+                        </SelectGroup>
+                        <SelectGroup>
+                            <SelectLabel>Câmaras</SelectLabel>
+                            <SelectItem value="Câmara A">Câmara A</SelectItem>
+                            <SelectItem value="Câmara C">Câmara C</SelectItem>
+                            <SelectItem value="Câmara D">Câmara D</SelectItem>
+                            <SelectItem value="Câmara F">Câmara F</SelectItem>
+                        </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="filtro-turno">Turno</Label>
+                  <Select value={turno} onValueChange={setTurno}>
+                    <SelectTrigger id="filtro-turno"><SelectValue placeholder="Todos" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todos">Todos</SelectItem>
+                      <SelectItem value="1">1º Turno</SelectItem>
+                      <SelectItem value="2">2º Turno</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="filtro-tipo">Mercado</Label>
+                  <Select value={tipo} onValueChange={setTipo}>
+                    <SelectTrigger id="filtro-tipo"><SelectValue placeholder="Todos" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todos">Todos</SelectItem>
+                      <SelectItem value="MI">MI</SelectItem>
+                      <SelectItem value="ME">ME</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="filtro-produto">Produto</Label>
+                    <Popover open={open} onOpenChange={setOpen}>
+                        <PopoverTrigger asChild>
+                            <Button
+                            variant="outline"
+                            role="combobox"
+                            aria-expanded={open}
+                            className="w-full justify-between"
+                            >
+                            {produtoCodigo === "todos"
+                                ? "Todos os Produtos"
+                                : produtosOptions.find((p) => p.value === produtoCodigo)?.label}
+                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[400px] p-0">
+                            <Command>
+                              <CommandInput 
+                                placeholder="Buscar produto..." 
+                                value={searchValue}
+                                onValueChange={setSearchValue}
+                              />
+                            <CommandList>
+                                <CommandEmpty>Nenhum produto encontrado.</CommandEmpty>
+                                <CommandGroup>
+                                    {produtosOptions.map((p) => (
+                                    <CommandItem
+                                        key={p.value}
+                                        value={p.label}
+                                        onSelect={(currentValue) => {
+                                          const allOptions = Object.entries(produtosPorCodigo).map(([codigo, { produto }]) => ({ value: codigo, label: `${codigo} - ${produto}` }));
+                                          const selectedOption = allOptions.find(opt => opt.label.toLowerCase() === currentValue.toLowerCase());
+                                          setProdutoCodigo(selectedOption ? selectedOption.value : "todos")
+                                          setOpen(false)
+                                        }}
+                                    >
+                                        <Check
+                                        className={cn(
+                                            "mr-2 h-4 w-4",
+                                            produtoCodigo === p.value ? "opacity-100" : "opacity-0"
+                                        )}
+                                        />
+                                        {p.label}
+                                    </CommandItem>
+                                    ))}
+                                </CommandGroup>
+                            </CommandList>
+                            </Command>
+                        </PopoverContent>
+                    </Popover>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="filtro-estado">Estado</Label>
+                  <Select value={estado} onValueChange={setEstado}>
+                    <SelectTrigger id="filtro-estado"><SelectValue placeholder="Todos" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todos">Todos</SelectItem>
+                      <SelectItem value="Congelado">Congelado</SelectItem>
+                      <SelectItem value="Resfriado">Resfriado</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </CardContent>
+          </CollapsibleContent>
+           <CardContent>
+              <div className="flex flex-wrap gap-4 pt-4 border-t">
+                  <Button onClick={carregarDados} disabled={loading}>
+                  {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Filter className="mr-2 h-4 w-4" />}
+                  Atualizar Gráficos
+                  </Button>
+                  <Button variant="outline" onClick={exportarGraficosPDF} disabled={loading || registros.length === 0}>
+                      <FileText className="mr-2 h-4 w-4" /> Exportar PDF
+                  </Button>
+              </div>
+           </CardContent>
+        </Collapsible>
       </Card>
       
         {loading ? (
@@ -481,3 +503,5 @@ export default function GraficosPage() {
     </div>
   );
 }
+
+    
