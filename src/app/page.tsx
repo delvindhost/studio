@@ -1,6 +1,6 @@
-
-import { redirect } from 'next/navigation'
-
-export default function RootPage() {
-  redirect('/app')
-}
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="refresh" content="0; url=/index.html" />
+  </head>
+</html>
