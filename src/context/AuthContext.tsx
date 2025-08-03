@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
@@ -7,6 +8,8 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 
 interface UserProfile {
+  nome: string;
+  matricula: string;
   role: 'admin' | 'user';
   permissions: string[];
 }
@@ -36,21 +39,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(user);
         const userDocRef = doc(db, 'users', user.uid);
         const userDoc = await getDoc(userDocRef);
+
         if (userDoc.exists()) {
           setUserProfile(userDoc.data() as UserProfile);
         } else {
+           // This case is for the initial admin user creation
            if (user.email === 'cq.uia@ind.com.br') {
-            const adminProfile: UserProfile = { role: 'admin', permissions: ['*'] };
+            const adminProfile: Omit<UserProfile, 'matricula'> & {role: 'admin'} = { 
+                nome: 'Admin UIA',
+                role: 'admin', 
+                permissions: ['/','/visualizar','/graficos','/usuarios','/configuracoes'] 
+            };
             await setDoc(userDocRef, adminProfile);
-            setUserProfile(adminProfile);
+            setUserProfile(adminProfile as UserProfile);
           } else {
-             setUserProfile({ role: 'user', permissions: [] });
+             // Fallback for users authenticated but without a profile
+             setUserProfile({ role: 'user', permissions: [], nome: 'Usuário', matricula: '' });
           }
         }
       } else {
         setUser(null);
         setUserProfile(null);
-        router.push('/login');
+        if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+            router.push('/login');
+        }
       }
       setLoading(false);
     });

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -18,7 +19,7 @@ import { Label } from "@/components/ui/label";
 import { Loader2 } from 'lucide-react';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
+  const [loginId, setLoginId] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -28,11 +29,21 @@ export default function LoginPage() {
     e.preventDefault();
     setError(null);
     setLoading(true);
+
+    // Check if loginId is an email or a registration number (matricula)
+    const isEmail = loginId.includes('@');
+    const emailToLogin = isEmail ? loginId : `${loginId}@local.user`;
+
+
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      await signInWithEmailAndPassword(auth, emailToLogin, password);
       router.push('/');
     } catch (err: any) {
-      setError('Falha no login. Verifique seu e-mail e senha.');
+        if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found') {
+             setError('Falha no login. Verifique suas credenciais.');
+        } else {
+             setError('Ocorreu um erro inesperado. Tente novamente.');
+        }
       console.error(err);
     } finally {
       setLoading(false);
@@ -45,20 +56,20 @@ export default function LoginPage() {
         <CardHeader>
           <CardTitle className="text-2xl text-center text-primary">Controle de Qualidade</CardTitle>
           <CardDescription className="text-center">
-            Entre com suas credenciais para acessar o sistema.
+            Entre com seu e-mail ou matrícula para acessar.
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleLogin}>
           <CardContent className="grid gap-4">
             <div className="grid gap-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="loginId">E-mail ou Matrícula</Label>
               <Input
-                id="email"
-                type="email"
-                placeholder="seu@email.com"
+                id="loginId"
+                type="text"
+                placeholder="seu@email.com ou 123456"
                 required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={loginId}
+                onChange={(e) => setLoginId(e.target.value)}
                 disabled={loading}
               />
             </div>
@@ -71,6 +82,7 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={loading}
+                placeholder="******"
               />
             </div>
             {error && <p className="text-sm text-destructive">{error}</p>}

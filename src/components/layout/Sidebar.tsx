@@ -18,6 +18,7 @@ import {
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/context/AuthContext";
 
 const navItems = [
   { href: "/", icon: Thermometer, label: "Registrar" },
@@ -35,11 +36,20 @@ type SidebarProps = {
 export default function Sidebar({ isSidebarOpen, setSidebarOpen }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const { userProfile } = useAuth();
+
 
   const handleLogout = async () => {
     await signOut(auth);
     router.push("/login");
   };
+
+  const hasPermission = (item: typeof navItems[0]) => {
+    if (!userProfile) return false;
+    if (userProfile.role === 'admin') return true;
+    if (item.admin) return false;
+    return userProfile.permissions.includes(item.href);
+  }
 
   return (
     <>
@@ -73,7 +83,7 @@ export default function Sidebar({ isSidebarOpen, setSidebarOpen }: SidebarProps)
         </div>
 
         <nav className="flex-1 px-4 space-y-2">
-          {navItems.map((item) => (
+          {navItems.filter(hasPermission).map((item) => (
             <Link key={item.label} href={item.href} passHref onClick={() => setSidebarOpen(false)}>
               <Button
                 variant={pathname === item.href ? "secondary" : "ghost"}
