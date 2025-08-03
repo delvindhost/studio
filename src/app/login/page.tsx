@@ -30,11 +30,6 @@ export default function LoginPage() {
           description: "Redirecionando...",
         });
         // O redirecionamento agora é centralizado no AuthContext
-        // if (result.role === 'admin') {
-        //   router.push('/admin');
-        // } else {
-        //   router.push('/');
-        // }
       } else {
         throw new Error("Credenciais inválidas");
       }

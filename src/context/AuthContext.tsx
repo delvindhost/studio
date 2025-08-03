@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
@@ -33,6 +34,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (firebaseUser) {
         const userDocRef = doc(db, 'users', firebaseUser.uid);
         const userDoc = await getDoc(userDocRef);
+        
         if (userDoc.exists()) {
           const userData = userDoc.data();
           setUser({
@@ -41,19 +43,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             role: userData.role || 'user',
           });
         } else {
-           // If user exists in Auth but not in Firestore, create a default user profile.
-           // This can happen if user was created manually in Firebase console.
-           // For this app, we'll give admin role to the main user.
+           // If user exists in Auth but not in Firestore, create their profile.
            const isAdmin = firebaseUser.email === 'cq.uia@ind.com.br';
            const userRole = isAdmin ? 'admin' : 'user';
 
-           const defaultUserData = {
+           const newUserProfile: UserProfile = {
                uid: firebaseUser.uid,
                email: firebaseUser.email,
                role: userRole
            };
            await setDoc(userDocRef, { email: firebaseUser.email, role: userRole });
-           setUser(defaultUserData);
+           setUser(newUserProfile);
         }
       } else {
         setUser(null);
@@ -67,15 +67,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (loading) return;
 
-    const isAuthRoute = pathname === '/login';
+    const isLoginPage = pathname === '/login';
 
-    // If no user and not on a public route, redirect to login
-    if (!user && !isAuthRoute) {
+    if (!user && !isLoginPage) {
       router.push('/login');
     }
 
-    // If user is logged in and tries to access login page, redirect them away
-    if (user && isAuthRoute) {
+    if (user && isLoginPage) {
        router.push(user.role === 'admin' ? '/admin' : '/');
     }
   }, [user, loading, pathname, router]);
@@ -83,24 +81,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string) => {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const firebaseUser = userCredential.user;
-
-      const userDocRef = doc(db, 'users', firebaseUser.uid);
-      const userDoc = await getDoc(userDocRef);
-
-      let role = 'user';
-      if (userDoc.exists()) {
-        role = userDoc.data().role || 'user';
-      } else {
-        // This case should be handled by the onAuthStateChanged listener,
-        // but we can have it as a fallback.
-        const isAdmin = firebaseUser.email === 'cq.uia@ind.com.br';
-        role = isAdmin ? 'admin' : 'user';
-        await setDoc(userDocRef, { email: firebaseUser.email, role: role });
-      }
-
-      return { success: true, role };
-
+      // The onAuthStateChanged listener will handle the user state update and redirection.
+      // We just need to return success.
+      return { success: true };
     } catch (error) {
       console.error("Login error:", error);
       return { success: false };
@@ -109,14 +92,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     await signOut(auth);
-    setUser(null); // Ensure user state is cleared immediately
+    setUser(null);
     router.push('/login');
   };
 
   const value = { user, loading, login, logout };
 
-  // While loading, or if we're unauthenticated on a protected route, show a loader.
-  if (loading || (!user && pathname !== '/login')) {
+  if (loading) {
      return (
         <div className="flex min-h-screen items-center justify-center bg-background">
             <Loader2 className="size-8 animate-spin text-primary" />
