@@ -124,7 +124,7 @@ export default function GraficosPage() {
     return Object.values(data).map(item => ({
         name: item.name,
         'Temperatura Média': parseFloat((item.total / item.count).toFixed(2))
-    })).sort((a,b) => b['Temperatura Média'] - a['Temperatura Média']);
+    })).sort((a,b) => a['Temperatura Média'] - b['Temperatura Média']);
   }, [registros]);
 
   const dadosGraficoLocal = useMemo(() => {
@@ -286,12 +286,12 @@ export default function GraficosPage() {
                 </CardHeader>
                 <CardContent className='h-[500px]'>
                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={dadosGraficoProduto} layout="vertical" margin={{ top: 5, right: 30, left: 100, bottom: 5 }}>
+                        <BarChart data={dadosGraficoProduto} layout="horizontal" margin={{ top: 5, right: 30, left: 100, bottom: 5 }}>
                             <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis type="number" />
-                            <YAxis dataKey="name" type="category" width={150} interval={0} />
+                            <XAxis dataKey="name" type="category" width={150} interval={0} />
+                            <YAxis type="number" />
                             <Tooltip />
-                            <Legend />
+                            <Legend verticalAlign="top" wrapperStyle={{ lineHeight: '40px' }} />
                             <Bar dataKey="Temperatura Média" fill="hsl(var(--primary))" />
                         </BarChart>
                     </ResponsiveContainer>
@@ -309,7 +309,7 @@ export default function GraficosPage() {
                             <XAxis dataKey="name" />
                             <YAxis />
                             <Tooltip />
-                            <Legend />
+                            <Legend verticalAlign="top" wrapperStyle={{ lineHeight: '40px' }} />
                             <Bar dataKey="Início" fill="#4B0082" />
                             <Bar dataKey="Meio" fill="#8A2BE2" />
                             <Bar dataKey="Fim" fill="#9370DB" />
@@ -329,7 +329,7 @@ export default function GraficosPage() {
                             <XAxis dataKey="name" angle={-20} textAnchor="end" height={60} interval={'preserveStartEnd'}/>
                             <YAxis />
                             <Tooltip />
-                            <Legend />
+                            <Legend verticalAlign="top" wrapperStyle={{ lineHeight: '40px' }} />
                             <Line type="monotone" dataKey="Início" stroke="#4B0082" activeDot={{ r: 8 }} />
                             <Line type="monotone" dataKey="Meio" stroke="#8A2BE2" />
                             <Line type="monotone" dataKey="Fim" stroke="#9370DB" />
