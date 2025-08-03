@@ -1,30 +1,29 @@
+
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
-  
-    // Helper function to check for admin role
-    function isAdmin() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    
+    function isAuth() {
+      return request.auth != null;
     }
     
-    // Helper function to check for delete permission
-    function canDeleteRecords() {
-        return 'delete_records' in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.permissions;
+    function isAdmin() {
+      return isAuth() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
-    // Rules for the 'users' collection
     match /users/{userId} {
-      allow read;
+      // Allow unauthenticated reads only on the 'matricula' field for login purposes.
+      // Authenticated users can read the whole document.
+      allow read: if (isAuth()) || (request.auth == null && 'matricula' in resource.data && request.query.offset == null);
       allow create: if request.auth.uid == userId || isAdmin();
-      allow update: if request.auth.uid == userId || isAdmin();
+      allow update: if isAdmin() || request.auth.uid == userId;
       allow delete: if isAdmin();
     }
 
-    // Rules for the 'registros' collection
     match /registros/{registroId} {
-      allow read, create: if request.auth != null;
-      allow update: if isAdmin();
-      allow delete: if isAdmin() || canDeleteRecords();
+      allow read, create: if isAuth();
+      allow update, delete: if isAdmin() || (isAuth() && 'delete_records' in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.permissions);
     }
   }
 }
