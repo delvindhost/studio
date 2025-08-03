@@ -7,7 +7,7 @@ import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { useRouter } from "next/navigation";
+import { useRouter }from "next/navigation";
 import {
   Thermometer,
   ClipboardList,
@@ -19,7 +19,7 @@ import {
 import { cn } from "@/lib/utils";
 
 const navItems = [
-  { href: "/registrar", icon: Thermometer, label: "Registrar" },
+  { href: "/", icon: Thermometer, label: "Registrar" },
   { href: "/visualizar", icon: ClipboardList, label: "Visualizar" },
   { href: "/graficos", icon: BarChart3, label: "Gráficos" },
   { href: "/usuarios", icon: Users, label: "Usuários", admin: true },
@@ -42,6 +42,7 @@ export default function Sidebar() {
       </div>
       <nav className="flex-1 px-4 space-y-2">
         {navItems.map((item) => (
+           // Adicionar lógica para ocultar itens de admin no futuro
           <Link key={item.label} href={item.href} passHref>
             <Button
               variant={pathname === item.href ? "secondary" : "ghost"}
