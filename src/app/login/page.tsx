@@ -32,15 +32,15 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const isEmail = loginId.includes('@');
       let emailToLogin = '';
 
-      if (isEmail) {
+      // Verifica se o loginId é um e-mail ou uma matrícula
+      if (loginId.includes('@')) {
         emailToLogin = loginId;
       } else {
-        // Se não for um e-mail, é uma matrícula. Busque o usuário no Firestore.
+        // Se for matrícula, busca o usuário no Firestore
         const usersRef = collection(db, 'users');
-        const q = query(usersRef, where('matricula', '==', loginId));
+        const q = query(usersRef, where('matricula', '==', loginId.trim()));
         const querySnapshot = await getDocs(q);
 
         if (querySnapshot.empty) {
@@ -49,16 +49,18 @@ export default function LoginPage() {
           return;
         }
         
-        // Assume que a matrícula é única
+        // Assumindo que a matrícula é única, pega o primeiro resultado
         const userData = querySnapshot.docs[0].data();
         emailToLogin = `${userData.matricula}@local.user`;
       }
       
+      // Tenta fazer o login com o e-mail (seja o digitado ou o construído)
       await signInWithEmailAndPassword(auth, emailToLogin, password);
       router.push('/');
 
     } catch (err: any) {
-        if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found') {
+        // Trata erros de autenticação
+        if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
              setError('Falha no login. Verifique suas credenciais.');
         } else {
              setError('Ocorreu um erro inesperado. Tente novamente.');
