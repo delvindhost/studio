@@ -449,10 +449,10 @@ export default function GraficosPage() {
                 </CardHeader>
                 <CardContent className='h-[500px]'>
                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={dadosGraficoProduto} layout="vertical" margin={{ top: 5, right: 30, left: 100, bottom: 5 }}>
+                        <BarChart data={dadosGraficoProduto} layout="vertical" margin={{ top: 5, right: 30, left: 250, bottom: 5 }}>
                             <CartesianGrid strokeDasharray="3 3" />
                             <XAxis type="number" />
-                            <YAxis dataKey="name" type="category" width={150} interval={0} tick={{ fontSize: 12 }} />
+                            <YAxis dataKey="name" type="category" width={240} interval={0} tick={{ fontSize: 12 }} />
                             <Tooltip />
                             <Legend />
                             <Bar dataKey="Temperatura Média" fill="hsl(var(--primary))" />
@@ -505,7 +505,3 @@ export default function GraficosPage() {
     </div>
   );
 }
-
-    
-
-    
