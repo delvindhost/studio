@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { BarChart, LineChart, XAxis, YAxis, CartesianGrid, Tooltip, Bar, Line, ResponsiveContainer, Legend } from 'recharts';
+import { BarChart, XAxis, YAxis, CartesianGrid, Tooltip, Bar, LineChart, Line, ResponsiveContainer, Legend } from 'recharts';
 import { Loader2, Filter, ChevronsUpDown, Check, FileText, ChevronDown } from 'lucide-react';
 import { produtosPorCodigo } from '@/lib/produtos';
 import { cn } from '@/lib/utils';
@@ -43,6 +43,8 @@ type Registro = {
   userId: string;
 };
 
+const CHART_PAGE_SIZE = 45;
+
 // Componente principal da página
 export default function GraficosPage() {
   const [registros, setRegistros] = useState<Registro[]>([]);
@@ -61,7 +63,7 @@ export default function GraficosPage() {
   const [isFilterVisible, setIsFilterVisible] = useState(false);
 
   // Refs for charts
-  const graficoProdutoRef = useRef<HTMLDivElement>(null);
+  const graficoContainerRef = useRef<HTMLDivElement>(null);
   const graficoLocalRef = useRef<HTMLDivElement>(null);
   const graficoVariacaoRef = useRef<HTMLDivElement>(null);
 
@@ -155,11 +157,13 @@ export default function GraficosPage() {
   const exportarGraficosPDF = async () => {
     setLoading(true);
     const doc = new jsPDF('p', 'mm', 'a4');
-    const chartRefs = [
-      { ref: graficoProdutoRef, title: 'Temperatura Média por Produto' },
-      { ref: graficoLocalRef, title: 'Média de Temperaturas por Local' },
-      { ref: graficoVariacaoRef, title: 'Variação de Temperaturas no Período' },
-    ];
+    
+    const container = graficoContainerRef.current;
+    if (!container) {
+        setError("Não foi possível encontrar o container dos gráficos para exportar.");
+        setLoading(false);
+        return;
+    }
     
     const imageMargin = 15;
     const pageWidth = doc.internal.pageSize.getWidth();
@@ -168,26 +172,27 @@ export default function GraficosPage() {
 
 
     try {
-        for (let i = 0; i < chartRefs.length; i++) {
-            const { ref, title } = chartRefs[i];
-            if (ref.current) {
-                const canvas = await html2canvas(ref.current, { 
-                    scale: 2, 
-                    useCORS: true,
-                    backgroundColor: '#ffffff' // Garante fundo branco
-                });
-                const imgData = canvas.toDataURL('image/png');
-                const imgHeight = (canvas.height * imageWidth) / canvas.width;
+        const canvas = await html2canvas(container, { 
+            scale: 2, 
+            useCORS: true,
+            backgroundColor: '#ffffff' // Garante fundo branco
+        });
+        const imgData = canvas.toDataURL('image/png');
+        const imgHeight = (canvas.height * imageWidth) / canvas.width;
 
-                if (i > 0) {
-                    doc.addPage();
-                }
-                
-                doc.setFontSize(16);
-                doc.text(title, pageWidth / 2, imageMargin, { align: 'center' });
-                doc.addImage(imgData, 'PNG', imageMargin, imageMargin + 10, imageWidth, imgHeight);
-            }
+        let heightLeft = imgHeight;
+        let position = 0;
+
+        doc.addImage(imgData, 'PNG', imageMargin, position, imageWidth, imgHeight);
+        heightLeft -= pageHeight;
+
+        while (heightLeft > 0) {
+            position = heightLeft - imgHeight;
+            doc.addPage();
+            doc.addImage(imgData, 'PNG', imageMargin, position, imageWidth, imgHeight);
+            heightLeft -= pageHeight;
         }
+
         doc.save('relatorio_graficos.pdf');
     } catch (error) {
         console.error("Erro ao exportar PDF:", error);
@@ -215,6 +220,16 @@ export default function GraficosPage() {
         'Temperatura Média': parseFloat((item.total / item.count).toFixed(2))
     })).sort((a,b) => a.name.localeCompare(b.name));
   }, [registros]);
+
+  const paginatedDadosGraficoProduto = useMemo(() => {
+    if (dadosGraficoProduto.length === 0) return [];
+    
+    const chunks = [];
+    for (let i = 0; i < dadosGraficoProduto.length; i += CHART_PAGE_SIZE) {
+        chunks.push(dadosGraficoProduto.slice(i, i + CHART_PAGE_SIZE));
+    }
+    return chunks;
+  }, [dadosGraficoProduto]);
 
   const dadosGraficoLocal = useMemo(() => {
       const data = registros.reduce((acc, reg) => {
@@ -442,24 +457,29 @@ export default function GraficosPage() {
         ) : error ? (
             <p className="text-center text-red-500 py-8">{error}</p>
         ) : (
-        <div className='space-y-6' id="graficos-container">
-            <Card ref={graficoProdutoRef}>
-                <CardHeader>
-                    <CardTitle>Temperatura Média por Produto</CardTitle>
-                </CardHeader>
-                <CardContent className='h-[500px]'>
-                     <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={dadosGraficoProduto} margin={{ top: 5, right: 30, left: 20, bottom: 150 }}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="name" angle={-45} textAnchor="end" interval={0} tick={{ fontSize: 12 }} />
-                            <YAxis />
-                            <Tooltip />
-                            <Legend />
-                            <Bar dataKey="Temperatura Média" fill="hsl(var(--primary))" />
-                        </BarChart>
-                    </ResponsiveContainer>
-                </CardContent>
-            </Card>
+        <div className='space-y-6' id="graficos-container" ref={graficoContainerRef}>
+            {paginatedDadosGraficoProduto.map((dataChunk, index) => (
+              <Card key={`produto-chart-${index}`}>
+                  <CardHeader>
+                      <CardTitle>
+                          Temperatura Média por Produto
+                          {paginatedDadosGraficoProduto.length > 1 && ` (Parte ${index + 1} de ${paginatedDadosGraficoProduto.length})`}
+                      </CardTitle>
+                  </CardHeader>
+                  <CardContent className='h-[500px]'>
+                       <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={dataChunk} margin={{ top: 5, right: 30, left: 20, bottom: 150 }}>
+                              <CartesianGrid strokeDasharray="3 3" />
+                              <XAxis dataKey="name" angle={-45} textAnchor="end" interval={0} tick={{ fontSize: 12 }} />
+                              <YAxis />
+                              <Tooltip />
+                              <Legend />
+                              <Bar dataKey="Temperatura Média" fill="hsl(var(--primary))" />
+                          </BarChart>
+                      </ResponsiveContainer>
+                  </CardContent>
+              </Card>
+            ))}
 
             <Card ref={graficoLocalRef}>
                 <CardHeader>
