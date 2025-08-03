@@ -48,7 +48,8 @@ export default function Sidebar({ isSidebarOpen, setSidebarOpen }: SidebarProps)
     if (!userProfile) return false;
     if (userProfile.role === 'admin') return true;
     if (item.admin) return false;
-    return userProfile.permissions.includes(item.href);
+    // Ensure permissions array exists before calling .includes()
+    return userProfile.permissions && userProfile.permissions.includes(item.href);
   }
 
   return (
