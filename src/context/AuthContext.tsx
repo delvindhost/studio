@@ -3,8 +3,8 @@
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { auth, db } from '@/lib/firebase';
-import { onAuthStateChanged, signInWithEmailAndPassword, signOut, User } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { onAuthStateChanged, signInWithEmailAndPassword, signOut, User as FirebaseUser } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
 import { Loader2 } from 'lucide-react';
 
 interface UserProfile {
@@ -29,42 +29,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: User | null) => {
-      try {
-        if (firebaseUser) {
-          const userDocRef = doc(db, 'users', firebaseUser.uid);
-          const userDoc = await getDoc(userDocRef);
-          
-          if (userDoc.exists()) {
-            const userData = userDoc.data();
-            setUser({
-              uid: firebaseUser.uid,
-              email: firebaseUser.email,
-              role: userData.role || 'user',
-            });
-          } else {
-             // Se o usuário existe no Auth mas não no Firestore, cria o perfil.
-             // Caso especial para o admin geral.
-             const isAdmin = firebaseUser.email === 'cq.uia@ind.com.br';
-             const userRole = isAdmin ? 'admin' : 'user';
-
-             const newUserProfile: UserProfile = {
-                 uid: firebaseUser.uid,
-                 email: firebaseUser.email,
-                 role: userRole
-             };
-             await setDoc(userDocRef, { email: firebaseUser.email, role: userRole });
-             setUser(newUserProfile);
-          }
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
+      if (firebaseUser) {
+        const userDocRef = doc(db, 'users', firebaseUser.uid);
+        const userDoc = await getDoc(userDocRef);
+        
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          setUser({
+            uid: firebaseUser.uid,
+            email: firebaseUser.email,
+            role: userData.role || 'user',
+          });
         } else {
+          // This can happen if user is created in Auth but not Firestore.
+          // For now, we log them out to force a clean profile creation path.
+          // The login function itself will handle creating the profile if needed.
+          await signOut(auth);
           setUser(null);
         }
-      } catch (error) {
-        console.error("Auth state change error:", error);
+      } else {
         setUser(null);
-      } finally {
-        setLoading(false);
       }
+      setLoading(false);
     });
 
     return () => unsubscribe();
@@ -73,13 +60,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (loading) return;
 
-    const isLoginPage = pathname === '/login';
+    const isAuthPage = pathname === '/login';
 
-    if (!user && !isLoginPage) {
+    // If user is not logged in and not on login page, redirect to login
+    if (!user && !isAuthPage) {
       router.push('/login');
     }
 
-    if (user && isLoginPage) {
+    // If user is logged in and on login page, redirect to home
+    if (user && isAuthPage) {
        router.push('/');
     }
   }, [user, loading, pathname, router]);
@@ -98,9 +87,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = async () => {
     await signOut(auth);
     // onAuthStateChanged will detect no user and the useEffect will redirect to /login.
+    router.push('/login');
   };
-
-  const value = { user, loading, login, logout };
   
   if (loading) {
      return (
@@ -109,9 +97,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         </div>
     );
   }
+  
+  // Prevent children from rendering if redirection is about to happen
+  const isAuthPage = pathname === '/login';
+  if (!user && !isAuthPage) return null;
+  if (user && isAuthPage) return null;
+
 
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider value={{ user, loading, login, logout }}>
         {children}
     </AuthContext.Provider>
   );

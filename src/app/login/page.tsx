@@ -7,33 +7,47 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
 import { ShieldCheck, LogIn, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { auth, db } from '@/lib/firebase';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 
 
 export default function LoginPage() {
   const [email, setEmail] = useState('cq.uia@ind.com.br');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  const { login } = useAuth(); // We still use context to trigger state change, but handle logic here.
   const { toast } = useToast();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const result = await login(email, password);
-      // The redirection is now fully handled by the AuthContext
-      if (!result.success) {
-        throw new Error("Credenciais inválidas");
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // Ensure user profile exists in Firestore, especially for the admin
+      const userDocRef = doc(db, 'users', user.uid);
+      const userDoc = await getDoc(userDocRef);
+
+      if (!userDoc.exists()) {
+        const isAdmin = user.email === 'cq.uia@ind.com.br';
+        await setDoc(userDocRef, {
+          email: user.email,
+          role: isAdmin ? 'admin' : 'user',
+        });
       }
+      // The AuthProvider's onAuthStateChanged will now handle the state update and redirection correctly.
+
     } catch (error) {
        toast({
           title: "Erro de Login",
           description: "Email ou senha incorretos. Por favor, tente novamente.",
           variant: "destructive",
         });
-    } finally {
-        setIsLoading(false);
+       setIsLoading(false);
     }
+    // Don't set loading to false on success, as the page will redirect.
   };
 
   return (
