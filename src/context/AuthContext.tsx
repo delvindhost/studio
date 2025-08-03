@@ -5,7 +5,6 @@ import React, { createContext, useContext, useEffect, useState, ReactNode } from
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { useRouter } from 'next/navigation';
 
 export interface UserProfile {
   nome: string;
@@ -30,7 +29,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -46,7 +44,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 nome: 'Admin UIA',
                 matricula: 'admin', 
                 role: 'admin', 
-                permissions: ['/', '/visualizar', '/graficos', '/usuarios', '/configuracoes'] 
+                permissions: ['/', '/registrar', '/visualizar', '/graficos', '/usuarios', '/configuracoes'] 
             };
             // Garante que o perfil no banco de dados esteja sempre correto, sobrescrevendo se necessário.
             await setDoc(userDocRef, adminProfile, { merge: true }); 
@@ -69,7 +67,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
 
     return () => unsubscribe();
-  }, [router]);
+  }, []);
 
   return (
     <AuthContext.Provider value={{ user, userProfile, loading }}>
