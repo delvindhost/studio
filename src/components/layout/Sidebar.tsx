@@ -9,6 +9,7 @@ import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
 import {
+  LayoutDashboard,
   Thermometer,
   ClipboardList,
   BarChart3,
@@ -21,7 +22,8 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 
 const navItems = [
-  { href: "/", icon: Thermometer, label: "Registrar" },
+  { href: "/", icon: LayoutDashboard, label: "Dashboard" },
+  { href: "/registrar", icon: Thermometer, label: "Registrar" },
   { href: "/visualizar", icon: ClipboardList, label: "Visualizar" },
   { href: "/graficos", icon: BarChart3, label: "Gráficos" },
   { href: "/usuarios", icon: Users, label: "Usuários", admin: true },

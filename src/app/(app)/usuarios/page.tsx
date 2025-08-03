@@ -17,6 +17,8 @@ import {
   DialogTrigger,
   DialogFooter,
   DialogClose,
+} from '@/components/ui/dialog';
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -48,9 +50,10 @@ type UserProfile = {
 };
 
 const navItems = [
-  { href: "/", label: "Registrar" },
+  { href: "/registrar", label: "Registrar" },
   { href: "/visualizar", label: "Visualizar" },
   { href: "/graficos", label: "Gráficos" },
+  { href: "/", label: "Dashboard" },
 ];
 
 
@@ -411,5 +414,3 @@ export default function UsuariosPage() {
     </div>
   );
 }
-
-    
