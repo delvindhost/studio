@@ -191,7 +191,7 @@ export default function RegistrarPage() {
                         <SelectTrigger id="local">
                             <SelectValue placeholder="Selecione o local" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="max-h-72">
                             <SelectGroup>
                                <SelectLabel>Giros Freezer</SelectLabel>
                                 <SelectItem value="Giro Freezer 1">Giro Freezer 1</SelectItem>

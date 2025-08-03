@@ -2,14 +2,30 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { collection, query, where, getDocs, orderBy, Timestamp } from 'firebase/firestore';
+import { collection, query, where, getDocs, orderBy, Timestamp, doc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from '@/components/ui/select';
-import { Loader2, Calendar, Filter, FileDown, FileText, MapPin, Barcode, Clock, Thermometer, Snowflake, Tag, Play, Pause, StopCircle, Trash2 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/dialog';
+import { Loader2, Filter, FileDown, FileText, MapPin, Barcode, Clock, Thermometer, Snowflake, Tag, Play, Pause, StopCircle, Trash2 } from 'lucide-react';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
+import * as XLSX from 'xlsx';
+import { useAuth } from '@/context/AuthContext';
+
 
 // Tipos
 type Registro = {
@@ -30,11 +46,15 @@ type Registro = {
   data: Timestamp;
 };
 
+type jsPDFWithAutoTable = jsPDF & { autoTable: (options: any) => void };
+
 // Componente principal da página
 export default function VisualizarPage() {
   const [registros, setRegistros] = useState<Registro[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { userProfile } = useAuth();
+
 
   const hoje = new Date().toISOString().split('T')[0];
   const [dataInicio, setDataInicio] = useState(hoje);
@@ -42,10 +62,27 @@ export default function VisualizarPage() {
   const [local, setLocal] = useState('todos');
   const [turno, setTurno] = useState('todos');
   const [tipo, setTipo] = useState('todos');
+  const [success, setSuccess] = useState<string | null>(null);
+
+
+  const showAlert = (message: string, type: 'success' | 'error') => {
+    if (type === 'success') {
+      setSuccess(message);
+      setError(null);
+    } else {
+      setError(message);
+      setSuccess(null);
+    }
+    setTimeout(() => {
+      setSuccess(null);
+      setError(null);
+    }, 3000);
+  };
 
   const carregarRegistros = async () => {
     setLoading(true);
     setError(null);
+    setSuccess(null);
     try {
       const inicio = new Date(`${dataInicio}T00:00:00`);
       const fim = new Date(`${dataFim}T23:59:59`);
@@ -86,11 +123,76 @@ export default function VisualizarPage() {
       setLoading(false);
     }
   };
+  
+   const handleDeleteRegistro = async (id: string) => {
+    try {
+      await deleteDoc(doc(db, "registros", id));
+      showAlert("Registro excluído com sucesso!", "success");
+      // Recarrega a lista para refletir a exclusão
+      carregarRegistros(); 
+    } catch (error) {
+      showAlert("Erro ao excluir o registro.", "error");
+      console.error("Erro ao excluir registro: ", error);
+    }
+  };
+
 
   useEffect(() => {
     carregarRegistros();
      // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const exportarPDF = () => {
+    if (registros.length === 0) {
+        alert("Não há dados para exportar.");
+        return;
+    }
+    const doc = new jsPDF() as jsPDFWithAutoTable;
+    doc.text("Relatório de Temperaturas", 14, 16);
+    doc.autoTable({
+        head: [['Data', 'Hora', 'Turno', 'Local', 'Produto', 'Tipo', 'Estado', 'T. Início', 'T. Meio', 'T. Fim']],
+        body: registros.map(reg => [
+            reg.dataManual,
+            reg.horarioManual,
+            reg.turno,
+            reg.local,
+            reg.produto,
+            reg.tipo,
+            reg.estado,
+            reg.temperaturas.inicio.toFixed(1),
+            reg.temperaturas.meio.toFixed(1),
+            reg.temperaturas.fim.toFixed(1)
+        ]),
+        startY: 20
+    });
+    doc.save('relatorio_temperaturas.pdf');
+  };
+
+  const exportarExcel = () => {
+      if (registros.length === 0) {
+        alert("Não há dados para exportar.");
+        return;
+      }
+      const dadosParaExportar = registros.map(reg => ({
+        'Data': reg.dataManual,
+        'Hora': reg.horarioManual,
+        'Turno': reg.turno,
+        'Local': reg.local,
+        'Código': reg.codigo,
+        'Produto': reg.produto,
+        'Tipo': reg.tipo,
+        'Estado': reg.estado,
+        'Temp. Início (°C)': reg.temperaturas.inicio.toFixed(1),
+        'Temp. Meio (°C)': reg.temperaturas.meio.toFixed(1),
+        'Temp. Fim (°C)': reg.temperaturas.fim.toFixed(1)
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(dadosParaExportar);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Registros");
+      XLSX.writeFile(wb, "relatorio_temperaturas.xlsx");
+  };
+
 
   return (
     <div className="space-y-6">
@@ -114,7 +216,7 @@ export default function VisualizarPage() {
               <Label htmlFor="filtro-local">Local</Label>
               <Select value={local} onValueChange={setLocal}>
                 <SelectTrigger id="filtro-local"><SelectValue placeholder="Todos" /></SelectTrigger>
-                <SelectContent>
+                <SelectContent className="max-h-72">
                   <SelectItem value="todos">Todos os locais</SelectItem>
                    <SelectGroup>
                         <SelectLabel>Giros Freezer</SelectLabel>
@@ -129,6 +231,40 @@ export default function VisualizarPage() {
                         <SelectItem value="Túnel 2">Túnel 2</SelectItem>
                         <SelectItem value="Túnel 3">Túnel 3</SelectItem>
                         <SelectItem value="Túnel 4">Túnel 4</SelectItem>
+                    </SelectGroup>
+                     <SelectGroup>
+                        <SelectLabel>Cortes</SelectLabel>
+                        <SelectItem value="Cortes 1">Cortes 1</SelectItem>
+                        <SelectItem value="Cortes 2">Cortes 2</SelectItem>
+                        <SelectItem value="Rependura Cortes 1">Rependura Cortes 1</SelectItem>
+                        <SelectItem value="Rependura Cortes 2">Rependura Cortes 2</SelectItem>
+                    </SelectGroup>
+                     <SelectGroup>
+                        <SelectLabel>Embalagem</SelectLabel>
+                        <SelectItem value="Embalagem Secundária">Embalagem Secundária</SelectItem>
+                    </SelectGroup>
+                    <SelectGroup>
+                        <SelectLabel>Expedição</SelectLabel>
+                        <SelectItem value="Expedição 1">Expedição 1</SelectItem>
+                        <SelectItem value="Expedição 2">Expedição 2</SelectItem>
+                    </SelectGroup>
+                        <SelectGroup>
+                        <SelectLabel>Paletização</SelectLabel>
+                        <SelectItem value="Paletização 1">Paletização 1</SelectItem>
+                        <SelectItem value="Paletização 2">Paletização 2</SelectItem>
+                    </SelectGroup>
+                    <SelectGroup>
+                        <SelectLabel>Outros</SelectLabel>
+                        <SelectItem value="Miudos">Miudos</SelectItem>
+                        <SelectItem value="Evisceração 1">Evisceração 1</SelectItem>
+                        <SelectItem value="Evisceração 2">Evisceração 2</SelectItem>
+                    </SelectGroup>
+                    <SelectGroup>
+                        <SelectLabel>Câmaras</SelectLabel>
+                        <SelectItem value="Câmara A">Câmara A</SelectItem>
+                        <SelectItem value="Câmara C">Câmara C</SelectItem>
+                        <SelectItem value="Câmara D">Câmara D</SelectItem>
+                        <SelectItem value="Câmara F">Câmara F</SelectItem>
                     </SelectGroup>
                 </SelectContent>
               </Select>
@@ -161,10 +297,10 @@ export default function VisualizarPage() {
               {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Filter className="mr-2 h-4 w-4" />}
               Filtrar
             </Button>
-            <Button variant="outline">
+            <Button variant="outline" onClick={exportarExcel}>
                 <FileDown className="mr-2 h-4 w-4" /> Exportar Excel
             </Button>
-             <Button variant="outline">
+             <Button variant="outline" onClick={exportarPDF}>
                 <FileText className="mr-2 h-4 w-4" /> Exportar PDF
             </Button>
           </div>
@@ -172,7 +308,8 @@ export default function VisualizarPage() {
       </Card>
       
       {loading && <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}
-      {error && !loading && <p className="text-center text-red-500">{error}</p>}
+      {error && !loading && <p className="text-center text-red-500 py-4">{error}</p>}
+      {success && !loading && <p className="text-center text-green-500 py-4">{success}</p>}
       
       {!loading && registros.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -226,9 +363,32 @@ export default function VisualizarPage() {
                     <p><strong>Data:</strong> {reg.dataManual}</p>
                     <p><strong>Horário:</strong> {reg.horarioManual}</p>
                   </div>
-                  <Button variant="ghost" size="icon">
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
+                   {userProfile?.role === 'admin' && (
+                     <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                         <Button variant="ghost" size="icon">
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Essa ação não pode ser desfeita. Isso excluirá permanentemente este registro.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => handleDeleteRegistro(reg.id)}
+                            className='bg-destructive hover:bg-destructive/90'
+                          >
+                            Sim, excluir
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
               </div>
             </Card>
           ))}

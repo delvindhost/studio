@@ -182,7 +182,7 @@ export default function GraficosPage() {
               <Label htmlFor="filtro-local">Local</Label>
               <Select value={local} onValueChange={setLocal}>
                 <SelectTrigger id="filtro-local"><SelectValue placeholder="Todos" /></SelectTrigger>
-                <SelectContent>
+                <SelectContent className="max-h-72">
                   <SelectItem value="todos">Todos os locais</SelectItem>
                    <SelectGroup>
                         <SelectLabel>Giros Freezer</SelectLabel>
@@ -197,6 +197,40 @@ export default function GraficosPage() {
                         <SelectItem value="Túnel 2">Túnel 2</SelectItem>
                         <SelectItem value="Túnel 3">Túnel 3</SelectItem>
                         <SelectItem value="Túnel 4">Túnel 4</SelectItem>
+                    </SelectGroup>
+                     <SelectGroup>
+                        <SelectLabel>Cortes</SelectLabel>
+                        <SelectItem value="Cortes 1">Cortes 1</SelectItem>
+                        <SelectItem value="Cortes 2">Cortes 2</SelectItem>
+                        <SelectItem value="Rependura Cortes 1">Rependura Cortes 1</SelectItem>
+                        <SelectItem value="Rependura Cortes 2">Rependura Cortes 2</SelectItem>
+                    </SelectGroup>
+                     <SelectGroup>
+                        <SelectLabel>Embalagem</SelectLabel>
+                        <SelectItem value="Embalagem Secundária">Embalagem Secundária</SelectItem>
+                    </SelectGroup>
+                    <SelectGroup>
+                        <SelectLabel>Expedição</SelectLabel>
+                        <SelectItem value="Expedição 1">Expedição 1</SelectItem>
+                        <SelectItem value="Expedição 2">Expedição 2</SelectItem>
+                    </SelectGroup>
+                        <SelectGroup>
+                        <SelectLabel>Paletização</SelectLabel>
+                        <SelectItem value="Paletização 1">Paletização 1</SelectItem>
+                        <SelectItem value="Paletização 2">Paletização 2</SelectItem>
+                    </SelectGroup>
+                    <SelectGroup>
+                        <SelectLabel>Outros</SelectLabel>
+                        <SelectItem value="Miudos">Miudos</SelectItem>
+                        <SelectItem value="Evisceração 1">Evisceração 1</SelectItem>
+                        <SelectItem value="Evisceração 2">Evisceração 2</SelectItem>
+                    </SelectGroup>
+                    <SelectGroup>
+                        <SelectLabel>Câmaras</SelectLabel>
+                        <SelectItem value="Câmara A">Câmara A</SelectItem>
+                        <SelectItem value="Câmara C">Câmara C</SelectItem>
+                        <SelectItem value="Câmara D">Câmara D</SelectItem>
+                        <SelectItem value="Câmara F">Câmara F</SelectItem>
                     </SelectGroup>
                 </SelectContent>
               </Select>
