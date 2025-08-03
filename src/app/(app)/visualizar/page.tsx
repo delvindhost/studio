@@ -71,14 +71,36 @@ export default function VisualizarPage() {
 
   // --- Combobox state ---
   const [open, setOpen] = useState(false)
+  const [searchValue, setSearchValue] = useState("");
+
 
   const produtosOptions = useMemo(() => {
     const options = Object.entries(produtosPorCodigo).map(([codigo, { produto }]) => ({
       value: codigo,
       label: `${codigo} - ${produto}`,
     }));
-    return [{ value: 'todos', label: 'Todos os Produtos' }, ...options];
-  }, []);
+
+    if (!searchValue) {
+       return [{ value: 'todos', label: 'Todos os Produtos' }, ...options];
+    }
+    
+    const lowercasedSearch = searchValue.toLowerCase();
+
+    const filtered = options.filter(({ label }) =>
+      label.toLowerCase().includes(lowercasedSearch)
+    );
+
+    // Prioritize exact code match
+    filtered.sort((a, b) => {
+        const aIsExact = a.value === searchValue;
+        const bIsExact = b.value === searchValue;
+        if (aIsExact && !bIsExact) return -1;
+        if (!aIsExact && bIsExact) return 1;
+        return a.label.localeCompare(b.label);
+    });
+
+    return [{ value: 'todos', label: 'Todos os Produtos' }, ...filtered];
+  }, [searchValue]);
 
 
   const showAlert = (message: string, type: 'success' | 'error') => {
@@ -321,7 +343,11 @@ export default function VisualizarPage() {
                     </PopoverTrigger>
                     <PopoverContent className="w-[400px] p-0">
                         <Command>
-                        <CommandInput placeholder="Buscar produto..." />
+                          <CommandInput 
+                            placeholder="Buscar produto..." 
+                            value={searchValue}
+                            onValueChange={setSearchValue}
+                          />
                          <CommandList>
                             <CommandEmpty>Nenhum produto encontrado.</CommandEmpty>
                             <CommandGroup>
@@ -330,7 +356,8 @@ export default function VisualizarPage() {
                                     key={p.value}
                                     value={p.label}
                                     onSelect={(currentValue) => {
-                                      const selectedOption = produtosOptions.find(opt => opt.label.toLowerCase() === currentValue.toLowerCase());
+                                      const allOptions = Object.entries(produtosPorCodigo).map(([codigo, { produto }]) => ({ value: codigo, label: `${codigo} - ${produto}` }));
+                                      const selectedOption = allOptions.find(opt => opt.label.toLowerCase() === currentValue.toLowerCase());
                                       setProdutoCodigo(selectedOption ? selectedOption.value : "todos")
                                       setOpen(false)
                                     }}
@@ -456,5 +483,3 @@ export default function VisualizarPage() {
     </div>
   );
 }
-
-    
