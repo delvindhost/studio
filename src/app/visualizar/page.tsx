@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from '@/components/ui/select';
-import { Loader2, Calendar, Filter, FileDown, FileText, MapPin, Barcode, Clock, Thermometer, Snowflake, Tag, Play, Pause, Stop, Trash2 } from 'lucide-react';
+import { Loader2, Calendar, Filter, FileDown, FileText, MapPin, Barcode, Clock, Thermometer, Snowflake, Tag, Play, Pause, StopCircle, Trash2 } from 'lucide-react';
 
 // Tipos
 type Registro = {
@@ -217,7 +217,7 @@ export default function VisualizarPage() {
                     <span>Meio: <strong>{reg.temperaturas.meio.toFixed(1).replace('.', ',')}°C</strong></span>
                   </div>
                    <div className="flex items-center gap-2">
-                    <Stop className="h-4 w-4 text-red-600"/>
+                    <StopCircle className="h-4 w-4 text-red-600"/>
                     <span>Fim: <strong>{reg.temperaturas.fim.toFixed(1).replace('.', ',')}°C</strong></span>
                   </div>
                 </div>
