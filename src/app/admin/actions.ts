@@ -5,17 +5,13 @@ import { z } from 'zod';
 import { collection, getDocs, addDoc, deleteDoc, doc, setDoc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { revalidatePath } from 'next/cache';
+import { auth } from '@/lib/firebase-admin'; // We will create this file for server-side auth actions
 
 const createUserSchema = z.object({
   email: z.string().email(),
-  password: z.string().min(6), // Note: Password is for a simulated auth creation, not stored in Firestore.
+  password: z.string().min(6),
   role: z.enum(['admin', 'user']),
 });
-
-// IMPORTANT: In a real application, you would use the Firebase Admin SDK
-// securely on a backend server to create and manage users in Firebase Authentication.
-// Since we can't run the Admin SDK here, we are only managing user *data* in Firestore.
-// The user would need to be created in Firebase Auth separately (e.g., via the console).
 
 export async function getUsers() {
   const usersCol = collection(db, 'users');
@@ -35,34 +31,46 @@ export async function createUser(data: z.infer<typeof createUserSchema>) {
   }
 
   try {
-    // This is a simplified user creation flow for this environment.
-    // It does NOT create an authentication entry. It only creates the user data document in Firestore.
-    // You must create the corresponding user in the Firebase Console Authentication tab.
-    const { email, role } = validatedData.data;
+    const { email, password, role } = validatedData.data;
 
-    // We'll create a document in the 'users' collection.
-    // In a real app, you would get the UID from `admin.auth().createUser()` and use it as the document ID.
-    // For this simulation, we'll let Firestore auto-generate an ID. This means the connection
-    // between Auth and Firestore data will need to be established manually or via another process.
-    await addDoc(collection(db, 'users'), { email, role });
+    // IMPORTANT: This now requires Firebase Admin SDK setup.
+    // Create user in Firebase Authentication
+    const userRecord = await auth.createUser({
+      email,
+      password,
+    });
+    
+    // Create user profile in Firestore with the SAME UID
+    await setDoc(doc(db, 'users', userRecord.uid), {
+      email,
+      role,
+    });
 
     revalidatePath('/admin/users');
-    return { success: true, message: 'Usuário criado no Firestore. Lembre-se de criá-lo na Autenticação do Firebase.' };
-  } catch (error) {
+    return { success: true, message: 'Usuário criado com sucesso!' };
+  } catch (error: any) {
     console.error(error);
-    return { success: false, message: 'Erro ao criar usuário no Firestore.' };
+    // Provide more specific error messages if possible
+    if (error.code === 'auth/email-already-exists') {
+      return { success: false, message: 'Este email já está em uso.' };
+    }
+    return { success: false, message: 'Erro ao criar usuário.' };
   }
 }
 
 export async function deleteUser(userId: string) {
   try {
-    // This only deletes the Firestore document.
-    // In a real app, you would also delete the user from Firebase Auth using the Admin SDK.
+    // IMPORTANT: This now requires Firebase Admin SDK setup.
+    // Delete user from Firebase Authentication
+    await auth.deleteUser(userId);
+
+    // Delete user from Firestore
     await deleteDoc(doc(db, 'users', userId));
+    
     revalidatePath('/admin/users');
-    return { success: true, message: 'Usuário excluído do Firestore.' };
+    return { success: true, message: 'Usuário excluído com sucesso.' };
   } catch (error) {
     console.error(error);
-    return { success: false, message: 'Erro ao excluir usuário do Firestore.' };
+    return { success: false, message: 'Erro ao excluir usuário.' };
   }
 }
