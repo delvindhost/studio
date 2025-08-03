@@ -40,6 +40,8 @@ type Registro = {
     fim: number;
   };
   data: Timestamp;
+  userId: string;
+  userName: string;
 };
 
 // Componente principal da página

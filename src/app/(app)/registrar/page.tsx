@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/select';
 import { Loader2, Save, Trash2 } from 'lucide-react';
 import { produtosPorCodigo } from '@/lib/produtos';
+import { useAuth } from '@/context/AuthContext';
 
 // Tipos
 type RegistroTemperatura = {
@@ -36,9 +37,12 @@ type RegistroTemperatura = {
     fim: number;
   };
   data: Date;
+  userId: string;
+  userName: string;
 };
 
 export default function RegistrarPage() {
+  const { user, userProfile } = useAuth();
   const [turno, setTurno] = useState('');
   const [local, setLocal] = useState('');
   const [codigo, setCodigo] = useState('');
@@ -98,6 +102,12 @@ export default function RegistrarPage() {
     setError(null);
     setSuccess(null);
 
+    if (!user || !userProfile) {
+      showAlert('Usuário não autenticado. Faça login novamente.', 'error');
+      setLoading(false);
+      return;
+    }
+
     const camposObrigatorios = {
       turno, local, produto, tipo, estado,
       dataManual, horarioManual, tempInicio, tempMeio, tempFim,
@@ -139,6 +149,8 @@ export default function RegistrarPage() {
           fim: parseFloat(tempFim),
         },
         data: dataComHorario,
+        userId: user.uid,
+        userName: userProfile.nome,
       };
 
       await addDoc(collection(db, 'registros'), novoRegistro);

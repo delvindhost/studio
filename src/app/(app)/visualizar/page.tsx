@@ -22,7 +22,7 @@ import {
 } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { Loader2, Filter, FileDown, FileText, MapPin, Barcode, Clock, Thermometer, Snowflake, Tag, Play, Pause, StopCircle, Trash2, ChevronsUpDown, Check, ChevronDown } from 'lucide-react';
+import { Loader2, Filter, FileDown, FileText, MapPin, Barcode, Clock, Thermometer, Snowflake, Tag, Play, Pause, StopCircle, Trash2, ChevronsUpDown, Check, ChevronDown, User } from 'lucide-react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -53,6 +53,8 @@ type Registro = {
     fim: number;
   };
   data: Timestamp;
+  userId: string;
+  userName: string;
 };
 
 type jsPDFWithAutoTable = jsPDF & { autoTable: (options: any) => void };
@@ -112,7 +114,7 @@ export default function VisualizarPage() {
 
   const canDeleteRecords = useMemo(() => {
     if (!userProfile) return false;
-    return userProfile.role === 'admin' || userProfile.permissions.includes('delete_records');
+    return userProfile.role === 'admin' || (userProfile.permissions && userProfile.permissions.includes('delete_records'));
   }, [userProfile]);
 
 
@@ -199,7 +201,7 @@ export default function VisualizarPage() {
     const doc = new jsPDF({ orientation: 'landscape' }) as jsPDFWithAutoTable;
     doc.text("Relatório de Temperaturas", 14, 16);
     doc.autoTable({
-        head: [['Data', 'Hora', 'Turno', 'Local', 'Produto', 'Tipo', 'Estado', 'T. Início', 'T. Meio', 'T. Fim']],
+        head: [['Data', 'Hora', 'Turno', 'Local', 'Produto', 'Tipo', 'Estado', 'T. Início', 'T. Meio', 'T. Fim', 'Registrado por']],
         body: registros.map(reg => [
             reg.dataManual,
             reg.horarioManual,
@@ -210,7 +212,8 @@ export default function VisualizarPage() {
             reg.estado,
             reg.temperaturas.inicio.toFixed(1),
             reg.temperaturas.meio.toFixed(1),
-            reg.temperaturas.fim.toFixed(1)
+            reg.temperaturas.fim.toFixed(1),
+            reg.userName || 'N/A'
         ]),
         startY: 20,
         headStyles: {
@@ -236,7 +239,8 @@ export default function VisualizarPage() {
         'Estado': reg.estado,
         'Temp. Início (°C)': reg.temperaturas.inicio.toFixed(1),
         'Temp. Meio (°C)': reg.temperaturas.meio.toFixed(1),
-        'Temp. Fim (°C)': reg.temperaturas.fim.toFixed(1)
+        'Temp. Fim (°C)': reg.temperaturas.fim.toFixed(1),
+        'Registrado por': reg.userName || 'N/A',
       }));
 
       const ws = XLSX.utils.json_to_sheet(dadosParaExportar);
@@ -489,9 +493,15 @@ export default function VisualizarPage() {
                 </div>
               </CardContent>
               <div className="p-6 pt-0 mt-auto text-xs text-muted-foreground flex justify-between items-center">
-                  <div>
+                  <div className='flex-grow'>
                     <p><strong>Data:</strong> {reg.dataManual}</p>
                     <p><strong>Horário:</strong> {reg.horarioManual}</p>
+                    {reg.userName && (
+                       <p className='flex items-center gap-1 pt-1'>
+                         <User className="h-3 w-3" />
+                         {reg.userName}
+                       </p>
+                    )}
                   </div>
                    {canDeleteRecords && (
                      <AlertDialog>
@@ -505,7 +515,7 @@ export default function VisualizarPage() {
                           <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
                           <AlertDialogDescription>
                             Essa ação não pode ser desfeita. Isso excluirá permanentemente este registro.
-                          </AlertDialogDescription>
+                          </Description>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                           <AlertDialogCancel>Cancelar</AlertDialogCancel>

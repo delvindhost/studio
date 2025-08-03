@@ -30,6 +30,8 @@ type Registro = {
     fim: number;
   };
   data: Timestamp;
+  userId: string;
+  userName: string;
 };
 
 type UserProfile = {
