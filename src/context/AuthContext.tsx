@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
@@ -31,35 +30,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: User | null) => {
-      if (firebaseUser) {
-        const userDocRef = doc(db, 'users', firebaseUser.uid);
-        const userDoc = await getDoc(userDocRef);
-        
-        if (userDoc.exists()) {
-          const userData = userDoc.data();
-          setUser({
-            uid: firebaseUser.uid,
-            email: firebaseUser.email,
-            role: userData.role || 'user',
-          });
-        } else {
-           // Se o usuário existe na Auth mas não no Firestore, cria o perfil.
-           // Caso especial para o admin geral.
-           const isAdmin = firebaseUser.email === 'cq.uia@ind.com.br';
-           const userRole = isAdmin ? 'admin' : 'user';
+      try {
+        if (firebaseUser) {
+          const userDocRef = doc(db, 'users', firebaseUser.uid);
+          const userDoc = await getDoc(userDocRef);
+          
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            setUser({
+              uid: firebaseUser.uid,
+              email: firebaseUser.email,
+              role: userData.role || 'user',
+            });
+          } else {
+             // Se o usuário existe no Auth mas não no Firestore, cria o perfil.
+             // Caso especial para o admin geral.
+             const isAdmin = firebaseUser.email === 'cq.uia@ind.com.br';
+             const userRole = isAdmin ? 'admin' : 'user';
 
-           const newUserProfile: UserProfile = {
-               uid: firebaseUser.uid,
-               email: firebaseUser.email,
-               role: userRole
-           };
-           await setDoc(userDocRef, { email: firebaseUser.email, role: userRole });
-           setUser(newUserProfile);
+             const newUserProfile: UserProfile = {
+                 uid: firebaseUser.uid,
+                 email: firebaseUser.email,
+                 role: userRole
+             };
+             await setDoc(userDocRef, { email: firebaseUser.email, role: userRole });
+             setUser(newUserProfile);
+          }
+        } else {
+          setUser(null);
         }
-      } else {
+      } catch (error) {
+        console.error("Auth state change error:", error);
         setUser(null);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     return () => unsubscribe();
@@ -69,14 +74,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (loading) return;
 
     const isLoginPage = pathname === '/login';
-    const isAppRoute = !isLoginPage;
 
-    // Se não há usuário, mas está tentando acessar uma rota do app, redireciona para o login.
-    if (!user && isAppRoute) {
+    if (!user && !isLoginPage) {
       router.push('/login');
     }
 
-    // Se há usuário, mas está na página de login, redireciona para a página principal.
     if (user && isLoginPage) {
        router.push('/');
     }
@@ -85,7 +87,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string) => {
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      // O onAuthStateChanged listener vai cuidar da atualização do estado e redirecionamento.
+      // onAuthStateChanged listener handles user state update and redirection
       return { success: true };
     } catch (error) {
       console.error("Login error:", error);
@@ -95,13 +97,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     await signOut(auth);
-    // O onAuthStateChanged vai detectar a ausência de usuário e o useEffect vai redirecionar para /login.
+    // onAuthStateChanged will detect no user and the useEffect will redirect to /login.
   };
 
   const value = { user, loading, login, logout };
   
-  // Mostra um loader global em todas as páginas, exceto no login, enquanto a autenticação carrega.
-  if (loading && pathname !== '/login') {
+  if (loading) {
      return (
         <div className="flex min-h-screen items-center justify-center bg-background">
             <Loader2 className="size-8 animate-spin text-primary" />
@@ -109,8 +110,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
   }
 
-  // Renderiza a página de login imediatamente, mesmo durante o carregamento,
-  // ou renderiza as outras páginas se o carregamento já terminou.
   return (
     <AuthContext.Provider value={value}>
         {children}

@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from 'react';
@@ -22,13 +21,8 @@ export default function LoginPage() {
     setIsLoading(true);
     try {
       const result = await login(email, password);
-      if (result.success) {
-        toast({
-          title: "Login bem-sucedido!",
-          description: "Redirecionando...",
-        });
-        // O redirecionamento agora é centralizado no AuthContext
-      } else {
+      // The redirection is now fully handled by the AuthContext
+      if (!result.success) {
         throw new Error("Credenciais inválidas");
       }
     } catch (error) {
