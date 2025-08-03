@@ -4,7 +4,7 @@ import React, { createContext, useState, useContext, useEffect, ReactNode } from
 import { useRouter, usePathname } from 'next/navigation';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { Loader2 } from 'lucide-react';
 
 interface UserProfile {
@@ -41,9 +41,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             role: userData.role || 'user',
           });
         } else {
-           // This can happen if the user was created in Auth but not in Firestore yet.
-           // The login page will handle creating the document. For now, treat as not fully logged in.
-           setUser(null);
+           // If user exists in Auth but not Firestore, create their profile.
+           // This handles the initial login for the admin user.
+           const isAdmin = firebaseUser.email === 'cq.uia@ind.com.br';
+           const newUserProfile: UserProfile = {
+             uid: firebaseUser.uid,
+             email: firebaseUser.email,
+             role: isAdmin ? 'admin' : 'user',
+           };
+           await setDoc(userDocRef, { email: newUserProfile.email, role: newUserProfile.role });
+           setUser(newUserProfile);
         }
       } else {
         setUser(null);
@@ -55,14 +62,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (loading) return;
+    if (loading) return; // Don't do anything until the auth state is resolved.
 
     const isAuthPage = pathname === '/login';
 
+    // If user is not logged in, and not on the login page, redirect to login
     if (!user && !isAuthPage) {
       router.push('/login');
     }
 
+    // If user is logged in and on the login page, redirect to the app's main page
     if (user && isAuthPage) {
        router.push('/');
     }
@@ -71,10 +80,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     await auth.signOut();
-    // onAuthStateChanged will detect user is null and the useEffect will redirect.
+    router.push('/login'); // Force redirect to login on logout.
   };
   
-  // While loading, or if we are about to redirect, show a loader to prevent flicker.
+  // While loading authentication state, or if a redirect is imminent, show a full-screen loader.
+  // This prevents the "flash" of content or a white screen.
   const isAuthPage = pathname === '/login';
   if (loading || (!user && !isAuthPage) || (user && isAuthPage)) {
      return (

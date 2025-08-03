@@ -21,25 +21,9 @@ export default function LoginPage() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-
-      // Ensure user profile exists in Firestore, especially for the initial admin
-      const userDocRef = doc(db, 'users', user.uid);
-      const userDoc = await getDoc(userDocRef);
-
-      if (!userDoc.exists()) {
-        // If profile doesn't exist, create it.
-        // Special logic for the initial admin user.
-        const isAdmin = user.email === 'cq.uia@ind.com.br';
-        await setDoc(userDocRef, {
-          email: user.email,
-          role: isAdmin ? 'admin' : 'user',
-        });
-      }
+      await signInWithEmailAndPassword(auth, email, password);
       // The AuthProvider will handle redirection after the auth state changes.
       // We don't need to do anything else here.
-
     } catch (error) {
        toast({
           title: "Erro de Login",
