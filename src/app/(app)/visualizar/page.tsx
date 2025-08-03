@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { collection, query, where, getDocs, orderBy, Timestamp, doc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
@@ -20,11 +20,15 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/dialog';
-import { Loader2, Filter, FileDown, FileText, MapPin, Barcode, Clock, Thermometer, Snowflake, Tag, Play, Pause, StopCircle, Trash2 } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Loader2, Filter, FileDown, FileText, MapPin, Barcode, Clock, Thermometer, Snowflake, Tag, Play, Pause, StopCircle, Trash2, ChevronsUpDown, Check } from 'lucide-react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { useAuth } from '@/context/AuthContext';
+import { produtosPorCodigo } from '@/lib/produtos';
+import { cn } from '@/lib/utils';
 
 
 // Tipos
@@ -62,7 +66,19 @@ export default function VisualizarPage() {
   const [local, setLocal] = useState('todos');
   const [turno, setTurno] = useState('todos');
   const [tipo, setTipo] = useState('todos');
+  const [produtoCodigo, setProdutoCodigo] = useState('todos');
   const [success, setSuccess] = useState<string | null>(null);
+
+  // --- Combobox state ---
+  const [open, setOpen] = useState(false)
+
+  const produtosOptions = useMemo(() => {
+    const options = Object.entries(produtosPorCodigo).map(([codigo, { produto }]) => ({
+      value: codigo,
+      label: `${codigo} - ${produto}`,
+    }));
+    return [{ value: 'todos', label: 'Todos os Produtos' }, ...options];
+  }, []);
 
 
   const showAlert = (message: string, type: 'success' | 'error') => {
@@ -94,15 +110,11 @@ export default function VisualizarPage() {
         orderBy('data', 'desc')
       );
 
-      if (local && local !== 'todos') {
-        q = query(q, where('local', '==', local));
-      }
-      if (turno && turno !== 'todos') {
-        q = query(q, where('turno', '==', turno));
-      }
-      if (tipo && tipo !== 'todos') {
-        q = query(q, where('tipo', '==', tipo));
-      }
+      if (local && local !== 'todos') q = query(q, where('local', '==', local));
+      if (turno && turno !== 'todos') q = query(q, where('turno', '==', turno));
+      if (tipo && tipo !== 'todos') q = query(q, where('tipo', '==', tipo));
+      if (produtoCodigo !== 'todos') q = query(q, where('codigo', '==', produtoCodigo));
+
 
       const querySnapshot = await getDocs(q);
       const dados: Registro[] = [];
@@ -203,7 +215,7 @@ export default function VisualizarPage() {
           <CardTitle>Filtros</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 items-end">
              <div className="space-y-2">
               <Label htmlFor="data-inicio">Data Inicial</Label>
               <Input id="data-inicio" type="date" value={dataInicio} onChange={(e) => setDataInicio(e.target.value)} />
@@ -290,6 +302,53 @@ export default function VisualizarPage() {
                   <SelectItem value="ME">ME</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+             <div className="space-y-2">
+                <Label htmlFor="filtro-produto">Produto</Label>
+                 <Popover open={open} onOpenChange={setOpen}>
+                    <PopoverTrigger asChild>
+                        <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={open}
+                        className="w-full justify-between"
+                        >
+                        {produtoCodigo === "todos"
+                            ? "Todos os Produtos"
+                            : produtosOptions.find((p) => p.value === produtoCodigo)?.label}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[400px] p-0">
+                        <Command>
+                        <CommandInput placeholder="Buscar produto..." />
+                         <CommandList>
+                            <CommandEmpty>Nenhum produto encontrado.</CommandEmpty>
+                            <CommandGroup>
+                                {produtosOptions.map((p) => (
+                                <CommandItem
+                                    key={p.value}
+                                    value={p.label}
+                                    onSelect={(currentValue) => {
+                                      const selectedOption = produtosOptions.find(opt => opt.label.toLowerCase() === currentValue.toLowerCase());
+                                      setProdutoCodigo(selectedOption ? selectedOption.value : "todos")
+                                      setOpen(false)
+                                    }}
+                                >
+                                    <Check
+                                    className={cn(
+                                        "mr-2 h-4 w-4",
+                                        produtoCodigo === p.value ? "opacity-100" : "opacity-0"
+                                    )}
+                                    />
+                                    {p.label}
+                                </CommandItem>
+                                ))}
+                            </CommandGroup>
+                         </CommandList>
+                        </Command>
+                    </PopoverContent>
+                </Popover>
             </div>
           </div>
           <div className="flex flex-wrap gap-4 mt-6">
@@ -397,3 +456,5 @@ export default function VisualizarPage() {
     </div>
   );
 }
+
+    
