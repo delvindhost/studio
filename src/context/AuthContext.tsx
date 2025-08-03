@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
@@ -29,6 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
@@ -43,21 +44,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             email: firebaseUser.email,
             role: userData.role || 'user',
           });
-        } else {
-            // This case might happen if a user is in auth but not firestore.
-            // For this app, we assume the login page handles user creation in firestore.
-            // If we still can't find a user, redirect to login.
-            router.push('/login');
         }
       } else {
         setUser(null);
-        router.push('/login');
       }
       setLoading(false);
     });
 
     return () => unsubscribe();
-  }, [router]);
+  }, []);
+
+  useEffect(() => {
+    if (!loading && !user && pathname !== '/login') {
+      router.push('/login');
+    }
+  }, [loading, user, pathname, router]);
 
   const logout = async () => {
     await auth.signOut();
@@ -73,16 +74,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
   }
   
-  // If not loading and no user, the effect above should have already redirected.
-  // This prevents rendering children in a state where user is null.
   if (!user) {
-    return (
-        <div className="flex min-h-screen items-center justify-center bg-background">
-            <Loader2 className="size-8 animate-spin text-primary" />
-        </div>
-    );
+    return null;
   }
-
 
   return (
     <AuthContext.Provider value={{ user, loading, logout }}>
