@@ -186,7 +186,10 @@ export default function VisualizarPage() {
                 <CardTitle className="text-lg text-primary truncate">
                   {reg.produto}
                 </CardTitle>
-                <p className="text-sm text-muted-foreground pt-1">{reg.local}</p>
+                <p className="text-sm text-muted-foreground pt-1 flex items-center gap-2">
+                  <MapPin className="h-4 w-4" /> 
+                  {reg.local}
+                </p>
               </CardHeader>
               <CardContent className="flex-grow text-sm space-y-3">
                 <div className="flex items-center gap-2 text-muted-foreground">
@@ -207,7 +210,7 @@ export default function VisualizarPage() {
                 </div>
 
                 <div className="pt-3 space-y-2">
-                  <h4 className="font-semibold text-primary">Temperaturas</h4>
+                  <h4 className="font-semibold text-primary flex items-center gap-2"><Thermometer className="h-4 w-4" />Temperaturas</h4>
                   <div className="flex items-center gap-2">
                     <Play className="h-4 w-4 text-green-600"/>
                     <span>Início: <strong>{reg.temperaturas.inicio.toFixed(1).replace('.', ',')}°C</strong></span>
