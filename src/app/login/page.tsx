@@ -2,8 +2,6 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -26,8 +24,9 @@ export default function LoginPage() {
     e.preventDefault();
     setError(null);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      // On successful login, AuthProvider will handle the redirect
+      // Fake login for now
+      console.log('Logging in with:', email, password);
+      router.push('/');
     } catch (err: any) {
       setError('Falha no login. Verifique seu e-mail e senha.');
       console.error(err);
@@ -66,7 +65,7 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
               />
             </div>
-            {error && <p className="text-red-500 text-sm">{error}</p>}
+            {error && <p className="text-sm text-destructive">{error}</p>}
           </CardContent>
           <CardFooter>
             <Button type="submit" className="w-full">Entrar</Button>
