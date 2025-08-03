@@ -38,7 +38,7 @@ export default function LoginPage() {
 
     try {
       // Constrói o e-mail a partir da matrícula para autenticação
-      const emailToLogin = `${matricula.trim()}@local.user`;
+      const emailToLogin = `${matricula.trim()}@ind.com.br`;
       
       await signInWithEmailAndPassword(auth, emailToLogin, password);
       router.push('/');

@@ -117,7 +117,7 @@ export default function UsuariosPage() {
       const newMatricula = value.trim();
       setMatricula(newMatricula);
       if (newMatricula) {
-        setEmail(`${newMatricula}@local.user`);
+        setEmail(`${newMatricula}@ind.com.br`);
       } else {
         setEmail('');
       }
@@ -262,7 +262,7 @@ export default function UsuariosPage() {
   const handleDeleteUser = async (userIdToDelete: string) => {
     try {
       await deleteDoc(doc(db, 'users', userIdToDelete));
-      showAlert('Usuário removido da base de dados! (A autenticação precisa ser removida manualmente no console do Firebase)', 'success');
+      showAlert('Usuário removido da base de dados! (A autenticação precisa ser removida manually no console do Firebase)', 'success');
       fetchUsers();
     } catch (error) {
         showAlert('Erro ao remover usuário.', 'error');
