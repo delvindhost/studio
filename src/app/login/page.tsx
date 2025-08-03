@@ -24,20 +24,21 @@ export default function LoginPage() {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // Garante que o perfil do usuário exista no Firestore
+      // Ensure user profile exists in Firestore, especially for the initial admin
       const userDocRef = doc(db, 'users', user.uid);
       const userDoc = await getDoc(userDocRef);
 
       if (!userDoc.exists()) {
-        // Se o perfil não existe, cria um.
-        // Lógica especial para o administrador inicial.
+        // If profile doesn't exist, create it.
+        // Special logic for the initial admin user.
         const isAdmin = user.email === 'cq.uia@ind.com.br';
         await setDoc(userDocRef, {
           email: user.email,
           role: isAdmin ? 'admin' : 'user',
         });
       }
-      // O AuthProvider cuidará do redirecionamento após a atualização do estado.
+      // The AuthProvider will handle redirection after the auth state changes.
+      // We don't need to do anything else here.
 
     } catch (error) {
        toast({
@@ -47,7 +48,7 @@ export default function LoginPage() {
         });
        setIsLoading(false);
     }
-    // Não definimos isLoading como false em caso de sucesso, pois a página irá redirecionar.
+    // We don't set isLoading to false on success because the page will redirect away.
   };
 
   return (

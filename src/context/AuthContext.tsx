@@ -41,9 +41,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             role: userData.role || 'user',
           });
         } else {
-          // Se o documento não existe no Firestore, o usuário não está totalmente configurado.
-          // A página de login cuidará da criação do documento.
-          // Por segurança, não definimos um usuário aqui para evitar estados inconsistentes.
+           // This case is handled on the login page to ensure profile exists.
+           // If it still happens, treat as not fully logged in.
            setUser(null);
         }
       } else {
@@ -72,10 +71,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     await auth.signOut();
-    // onAuthStateChanged irá detectar a ausência de usuário e o useEffect irá redirecionar.
+    // onAuthStateChanged will detect user is null and the useEffect will redirect.
   };
   
-  // Enquanto estiver carregando, mostra um spinner global.
   if (loading) {
      return (
         <div className="flex min-h-screen items-center justify-center bg-background">
@@ -84,9 +82,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
   }
   
-  // Para evitar um piscar de conteúdo, não renderiza as páginas de destino
-  // se um redirecionamento estiver prestes a acontecer.
   const isAuthPage = pathname === '/login';
+  // Avoid flashing the wrong page while redirecting
   if ((!user && !isAuthPage) || (user && isAuthPage)) {
       return (
         <div className="flex min-h-screen items-center justify-center bg-background">
@@ -94,7 +91,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         </div>
       );
   }
-
 
   return (
     <AuthContext.Provider value={{ user, loading, logout }}>
