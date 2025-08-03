@@ -7,7 +7,7 @@ import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { useRouter }from "next/navigation";
+import { useRouter } from "next/navigation";
 import {
   Thermometer,
   ClipboardList,
@@ -15,6 +15,7 @@ import {
   Settings,
   Users,
   LogOut,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -26,7 +27,12 @@ const navItems = [
   { href: "/configuracoes", icon: Settings, label: "Configurações" },
 ];
 
-export default function Sidebar() {
+type SidebarProps = {
+  isSidebarOpen: boolean;
+  setSidebarOpen: (open: boolean) => void;
+};
+
+export default function Sidebar({ isSidebarOpen, setSidebarOpen }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
 
@@ -36,34 +42,61 @@ export default function Sidebar() {
   };
 
   return (
-    <div className="hidden md:flex flex-col w-64 bg-primary text-primary-foreground">
-      <div className="p-6">
-        <h2 className="text-2xl font-bold text-center">Controle de Qualidade</h2>
+    <>
+      {/* Overlay for mobile */}
+      <div
+        className={cn(
+          "fixed inset-0 z-30 bg-black/50 transition-opacity md:hidden",
+          isSidebarOpen ? "opacity-100" : "pointer-events-none opacity-0"
+        )}
+        onClick={() => setSidebarOpen(false)}
+      />
+
+      {/* Sidebar */}
+      <div
+        className={cn(
+          "fixed top-0 left-0 z-40 flex h-full w-64 flex-col bg-primary text-primary-foreground transition-transform duration-300 ease-in-out md:relative md:translate-x-0",
+          isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+        )}
+      >
+        <div className="flex items-center justify-between p-4 md:justify-center md:p-6">
+          <h2 className="text-2xl font-bold text-center">Controle de Qualidade</h2>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setSidebarOpen(false)}
+            className="md:hidden"
+          >
+            <X className="h-6 w-6" />
+            <span className="sr-only">Fechar menu</span>
+          </Button>
+        </div>
+
+        <nav className="flex-1 px-4 space-y-2">
+          {navItems.map((item) => (
+            <Link key={item.label} href={item.href} passHref onClick={() => setSidebarOpen(false)}>
+              <Button
+                variant={pathname === item.href ? "secondary" : "ghost"}
+                className="w-full justify-start"
+              >
+                <item.icon className="mr-3 h-5 w-5" />
+                {item.label}
+              </Button>
+            </Link>
+          ))}
+        </nav>
+
+        <div className="p-4 border-t border-primary-foreground/20">
+          <Button
+            variant="ghost"
+            className="w-full justify-start"
+            onClick={handleLogout}
+          >
+            <LogOut className="mr-3 h-5 w-5" />
+            Sair
+          </Button>
+        </div>
       </div>
-      <nav className="flex-1 px-4 space-y-2">
-        {navItems.map((item) => (
-           // Adicionar lógica para ocultar itens de admin no futuro
-          <Link key={item.label} href={item.href} passHref>
-            <Button
-              variant={pathname === item.href ? "secondary" : "ghost"}
-              className="w-full justify-start"
-            >
-              <item.icon className="mr-3 h-5 w-5" />
-              {item.label}
-            </Button>
-          </Link>
-        ))}
-      </nav>
-      <div className="p-4 border-t border-primary-foreground/20">
-        <Button
-          variant="ghost"
-          className="w-full justify-start"
-          onClick={handleLogout}
-        >
-          <LogOut className="mr-3 h-5 w-5" />
-          Sair
-        </Button>
-      </div>
-    </div>
+    </>
   );
 }
