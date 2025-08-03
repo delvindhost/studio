@@ -8,6 +8,7 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 export interface UserProfile {
   nome: string;
+  email: string;
   matricula: string;
   role: 'admin' | 'user';
   permissions: string[];
@@ -36,32 +37,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (user) {
         setUser(user);
         const userDocRef = doc(db, 'users', user.uid);
-        
-        // CORREÇÃO: Simplifica a lógica para evitar condições de corrida.
-        // O perfil de admin deve ser criado na página de gerenciamento ou um script de setup.
-        // Aqui, apenas lemos os dados existentes.
         const userDoc = await getDoc(userDocRef);
 
-        if (user.email === 'cq.uia@ind.com.br') {
+        const isKnownAdminEmail = user.email === 'cq.uia@ind.com.br';
+
+        if (isKnownAdminEmail && !userDoc.exists()) {
             const adminProfile: UserProfile = { 
                 nome: 'Admin UIA',
+                email: 'cq.uia@ind.com.br',
                 matricula: 'admin', 
                 role: 'admin', 
-                permissions: ['/', '/registrar', '/visualizar', '/graficos', '/usuarios', '/configuracoes'] 
+                permissions: ['/', '/registrar', '/visualizar', '/graficos', '/usuarios', '/configuracoes', 'delete_records'] 
             };
-            // Apenas define o perfil de admin no estado, sem forçar escrita aqui.
-            // A escrita pode ser feita em um local mais apropriado se necessário.
-            if (!userDoc.exists()) {
-                await setDoc(userDocRef, adminProfile, { merge: true });
-            }
+            await setDoc(userDocRef, adminProfile, { merge: true });
             setUserProfile(adminProfile);
+        } else if (userDoc.exists()) {
+            setUserProfile(userDoc.data() as UserProfile);
         } else {
-            if (userDoc.exists()) {
-                setUserProfile(userDoc.data() as UserProfile);
-            } else {
-                // Usuário logado mas sem perfil (não deve acontecer no fluxo normal)
-                setUserProfile(null);
-            }
+            // User is authenticated but has no profile in Firestore.
+            // This can happen briefly during the first login signup process.
+            setUserProfile(null);
         }
       } else {
         setUser(null);

@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { collection, getDocs, doc, setDoc, deleteDoc, updateDoc } from 'firebase/firestore';
-import { createUserWithEmailAndPassword, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { db, auth as mainAuth } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -36,7 +36,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, UserPlus, Users, ShieldCheck, KeyRound, User, Trash2, MoreVertical, Edit } from 'lucide-react';
+import { Loader2, UserPlus, Users, ShieldCheck, KeyRound, User, Trash2, MoreVertical, Edit, Mail } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 
@@ -44,6 +44,7 @@ import { useRouter } from 'next/navigation';
 type UserProfile = {
   id: string;
   nome: string;
+  email: string;
   matricula: string;
   role: 'admin' | 'user';
   permissions: string[];
@@ -78,6 +79,7 @@ export default function UsuariosPage() {
   // Form state
   const [nome, setNome] = useState('');
   const [matricula, setMatricula] = useState('');
+  const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [permissions, setPermissions] = useState<string[]>([]);
 
@@ -136,6 +138,7 @@ export default function UsuariosPage() {
   const resetForm = () => {
     setNome('');
     setMatricula('');
+    setEmail('');
     setSenha('');
     setPermissions([]);
     setEditingUser(null);
@@ -147,6 +150,7 @@ export default function UsuariosPage() {
     setEditingUser(user);
     setNome(user.nome);
     setMatricula(user.matricula);
+    setEmail(user.email);
     setPermissions(user.permissions);
     setSenha(''); // Senha não é preenchida por segurança
     setIsDialogOpen(true);
@@ -167,8 +171,8 @@ export default function UsuariosPage() {
   }
 
   const handleAddUser = async () => {
-    if (!nome || !matricula || !senha ) {
-      showAlert('Por favor, preencha nome, matrícula e senha.', 'error');
+    if (!nome || !matricula || !senha || !email) {
+      showAlert('Por favor, preencha nome, matrícula, e-mail e senha.', 'error');
       return;
     }
     setIsSubmitting(true);
@@ -176,13 +180,14 @@ export default function UsuariosPage() {
     setSuccess(null);
 
     try {
-      const userCredential = await createUserWithEmailAndPassword(mainAuth, `${matricula}@local.user`, senha);
+      const userCredential = await createUserWithEmailAndPassword(mainAuth, email, senha);
       const user = userCredential.user;
 
       const userDocRef = doc(db, 'users', user.uid);
       await setDoc(userDocRef, {
         nome,
         matricula,
+        email,
         role: 'user',
         permissions,
       });
@@ -192,9 +197,11 @@ export default function UsuariosPage() {
       fetchUsers();
     } catch (err: any) {
         if (err.code === 'auth/email-already-in-use') {
-            showAlert('Erro: A matrícula informada já está em uso.', 'error');
+            showAlert('Erro: O e-mail informado já está em uso.', 'error');
         } else if (err.code === 'auth/weak-password') {
             showAlert('Erro: A senha deve ter no mínimo 6 caracteres.', 'error');
+        } else if (err.code === 'auth/invalid-email') {
+            showAlert('Erro: O e-mail informado é inválido.', 'error');
         } else {
             showAlert('Erro ao criar usuário. Verifique os dados e tente novamente.', 'error');
         }
@@ -205,8 +212,8 @@ export default function UsuariosPage() {
   };
 
   const handleUpdateUser = async () => {
-     if (!editingUser || !nome || !matricula) {
-      showAlert('Por favor, preencha nome e matrícula.', 'error');
+     if (!editingUser || !nome || !matricula || !email) {
+      showAlert('Por favor, preencha nome, matrícula e e-mail.', 'error');
       return;
     }
      if (senha && senha.length < 6) {
@@ -221,14 +228,15 @@ export default function UsuariosPage() {
     try {
         const userDocRef = doc(db, 'users', editingUser.id);
         
-        if (editingUser.matricula !== matricula) {
-           showAlert('A alteração de matrícula não é permitida diretamente. Para isso, remova e crie o usuário novamente.', 'error');
+        if (editingUser.email !== email) {
+           showAlert('A alteração de e-mail não é permitida diretamente. A autenticação do usuário está vinculada a ele. Para isso, remova e crie o usuário novamente.', 'error');
            setIsSubmitting(false);
            return;
         }
 
         await updateDoc(userDocRef, {
             nome,
+            matricula,
             permissions,
         });
 
@@ -252,7 +260,7 @@ export default function UsuariosPage() {
   const handleDeleteUser = async (userIdToDelete: string) => {
     try {
       await deleteDoc(doc(db, 'users', userIdToDelete));
-      showAlert('Usuário removido da base de dados! (A autenticação precisa ser removida manually no console do Firebase)', 'success');
+      showAlert('Usuário removido da base de dados! (A autenticação precisa ser removida manualmente no console do Firebase)', 'success');
       fetchUsers();
     } catch (error) {
         showAlert('Erro ao remover usuário.', 'error');
@@ -294,7 +302,7 @@ export default function UsuariosPage() {
               <UserPlus className="mr-2 h-4 w-4" /> Adicionar Usuário
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]" onInteractOutside={(e) => {
+          <DialogContent className="sm:max-w-md" onInteractOutside={(e) => {
               if (isSubmitting) e.preventDefault();
           }}>
             <DialogHeader>
@@ -307,8 +315,12 @@ export default function UsuariosPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="matricula">Matrícula</Label>
-                <Input id="matricula" value={matricula} onChange={(e) => setMatricula(e.target.value)} placeholder="Matrícula de login" disabled={isSubmitting || !!editingUser}/>
-                 {editingUser && <p className='text-xs text-muted-foreground'>A matrícula não pode ser alterada.</p>}
+                <Input id="matricula" value={matricula} onChange={(e) => setMatricula(e.target.value)} placeholder="Matrícula de identificação" disabled={isSubmitting}/>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="email">E-mail de Login</Label>
+                <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@dominio.com" disabled={isSubmitting || !!editingUser} />
+                {editingUser && <p className='text-xs text-muted-foreground'>O e-mail de login não pode ser alterado.</p>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="senha">Senha</Label>
@@ -386,6 +398,7 @@ export default function UsuariosPage() {
                 <div key={user.id} className="flex items-center justify-between rounded-lg border p-4">
                     <div className='space-y-1'>
                         <p className="font-semibold flex items-center gap-2"><User className='h-4 w-4 text-primary'/> {user.nome}</p>
+                         <p className="text-sm text-muted-foreground flex items-center gap-2"><Mail className='h-4 w-4'/> E-mail: {user.email}</p>
                         <p className="text-sm text-muted-foreground flex items-center gap-2"><KeyRound className='h-4 w-4'/> Matrícula: {user.matricula}</p>
                         <p className="text-sm text-muted-foreground flex items-center gap-2"><ShieldCheck className='h-4 w-4'/> Permissões: {user.permissions.map(p => getPermissionLabel(p)).join(', ')}</p>
                     </div>

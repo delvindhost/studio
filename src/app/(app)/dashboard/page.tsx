@@ -35,6 +35,7 @@ type Registro = {
 type UserProfile = {
   id: string;
   nome: string;
+  email: string;
   matricula: string;
   role: 'admin' | 'user';
   permissions: string[];
@@ -90,7 +91,7 @@ export default function DashboardPage() {
        setUsers(userList);
 
 
-    } catch (err) {
+    } catch (err) => {
       console.error(err);
     } finally {
       setLoading(false);
