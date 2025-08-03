@@ -17,7 +17,7 @@ interface UserProfile {
 interface AuthContextType {
   user: UserProfile | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<{ success: boolean; role?: string }>;
+  login: (email: string, password: string) => Promise<{ success: boolean; }>;
   logout: () => void;
 }
 
@@ -44,6 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           });
         } else {
            // If user exists in Auth but not in Firestore, create their profile.
+           // This handles the initial admin user case.
            const isAdmin = firebaseUser.email === 'cq.uia@ind.com.br';
            const userRole = isAdmin ? 'admin' : 'user';
 
@@ -68,11 +69,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (loading) return;
 
     const isLoginPage = pathname === '/login';
+    const isAppRoute = !isLoginPage;
 
-    if (!user && !isLoginPage) {
+    // If no user, but trying to access app -> redirect to login
+    if (!user && isAppRoute) {
       router.push('/login');
     }
 
+    // If user exists, but is on login page -> redirect to their home
     if (user && isLoginPage) {
        router.push(user.role === 'admin' ? '/admin' : '/');
     }
@@ -80,9 +84,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string) => {
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      await signInWithEmailAndPassword(auth, email, password);
       // The onAuthStateChanged listener will handle the user state update and redirection.
-      // We just need to return success.
       return { success: true };
     } catch (error) {
       console.error("Login error:", error);
@@ -92,20 +95,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     await signOut(auth);
-    setUser(null);
     router.push('/login');
   };
 
   const value = { user, loading, login, logout };
-
-  if (loading) {
+  
+  const isLoginPage = pathname === '/login';
+  
+  if (loading && !isLoginPage) {
      return (
         <div className="flex min-h-screen items-center justify-center bg-background">
             <Loader2 className="size-8 animate-spin text-primary" />
         </div>
     );
   }
-
 
   return (
     <AuthContext.Provider value={value}>
