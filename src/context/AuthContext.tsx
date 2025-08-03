@@ -5,7 +5,7 @@ import React, { createContext, useState, useContext, useEffect, ReactNode } from
 import { useRouter, usePathname } from 'next/navigation';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut, User } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 interface UserProfile {
     uid: string;
@@ -42,9 +42,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           });
         } else {
            // This case handles a user that exists in Auth but not Firestore.
-           // You might want to log them out or create a default user doc.
-           setUser(null);
-           await signOut(auth);
+           // We will create a default user doc for them.
+           const defaultUserData = {
+               uid: firebaseUser.uid,
+               email: firebaseUser.email,
+               role: 'user'
+           };
+           await setDoc(userDocRef, { email: firebaseUser.email, role: 'user' });
+           setUser(defaultUserData);
         }
       } else {
         setUser(null);
@@ -69,19 +74,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const userDocRef = doc(db, 'users', firebaseUser.uid);
       const userDoc = await getDoc(userDocRef);
 
+      let role = 'user';
       if (userDoc.exists()) {
         const userData = userDoc.data();
-        const role = userData.role || 'user';
-         setUser({
-            uid: firebaseUser.uid,
-            email: firebaseUser.email,
-            role: role,
-        });
-        return { success: true, role };
+        role = userData.role || 'user';
+      } else {
+        // If user doc doesn't exist, create one with default 'user' role
+        await setDoc(userDocRef, { email: firebaseUser.email, role: 'user' });
       }
-      // Log out if no user profile is found in Firestore
-      await signOut(auth);
-      return { success: false };
+
+      setUser({
+          uid: firebaseUser.uid,
+          email: firebaseUser.email,
+          role: role as 'admin' | 'user',
+      });
+      return { success: true, role };
+
     } catch (error) {
       console.error("Login error:", error);
       return { success: false };

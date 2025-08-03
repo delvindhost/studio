@@ -2,32 +2,20 @@
 'use server';
 
 import { z } from 'zod';
-import { collection, getDocs, addDoc, deleteDoc, doc, setDoc } from 'firebase/firestore';
+import { collection, getDocs, addDoc, deleteDoc, doc, setDoc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { revalidatePath } from 'next/cache';
 
 const createUserSchema = z.object({
   email: z.string().email(),
-  password: z.string().min(6),
+  password: z.string().min(6), // Note: Password is for a simulated auth creation, not stored in Firestore.
   role: z.enum(['admin', 'user']),
 });
 
-// This is a server-side representation of the user, NOT a client-side one.
-// It interacts with a separate, admin-initialized Firebase app.
-// We are simulating the admin action here. For a real app, you'd use the Firebase Admin SDK.
-
-// Mock Admin SDK setup. In a real project, this would be initialized securely on the server.
-const createFirebaseUser = async (email: string, uid: string) => {
-    // This is a placeholder for `admin.auth().createUser()`
-    console.log(`Simulating user creation for email: ${email} with UID: ${uid}`);
-    return { uid, email };
-};
-
-const deleteFirebaseUser = async (uid: string) => {
-    // This is a placeholder for `admin.auth().deleteUser()`
-    console.log(`Simulating user deletion for UID: ${uid}`);
-    return;
-}
+// IMPORTANT: In a real application, you would use the Firebase Admin SDK
+// securely on a backend server to create and manage users in Firebase Authentication.
+// Since we can't run the Admin SDK here, we are only managing user *data* in Firestore.
+// The user would need to be created in Firebase Auth separately (e.g., via the console).
 
 export async function getUsers() {
   const usersCol = collection(db, 'users');
@@ -47,33 +35,34 @@ export async function createUser(data: z.infer<typeof createUserSchema>) {
   }
 
   try {
-    // In a real app, you would use the Firebase Admin SDK to create the user in Auth
-    // For now, we'll just add them to the Firestore collection.
-    // The password would not be stored here.
+    // This is a simplified user creation flow for this environment.
+    // It does NOT create an authentication entry. It only creates the user data document in Firestore.
+    // You must create the corresponding user in the Firebase Console Authentication tab.
     const { email, role } = validatedData.data;
-    
-    // We'll use a simplified approach: add to Firestore and assume Auth user is created elsewhere
-    // In a real app, you would get the UID from the Admin SDK user creation response
-    const newUserRef = doc(collection(db, 'users'));
-    await setDoc(newUserRef, { email, role });
+
+    // We'll create a document in the 'users' collection.
+    // In a real app, you would get the UID from `admin.auth().createUser()` and use it as the document ID.
+    // For this simulation, we'll let Firestore auto-generate an ID. This means the connection
+    // between Auth and Firestore data will need to be established manually or via another process.
+    await addDoc(collection(db, 'users'), { email, role });
 
     revalidatePath('/admin/users');
-    return { success: true, message: 'Usuário criado com sucesso!' };
+    return { success: true, message: 'Usuário criado no Firestore. Lembre-se de criá-lo na Autenticação do Firebase.' };
   } catch (error) {
     console.error(error);
-    return { success: false, message: 'Erro ao criar usuário.' };
+    return { success: false, message: 'Erro ao criar usuário no Firestore.' };
   }
 }
 
 export async function deleteUser(userId: string) {
   try {
+    // This only deletes the Firestore document.
+    // In a real app, you would also delete the user from Firebase Auth using the Admin SDK.
     await deleteDoc(doc(db, 'users', userId));
-    // In a real app, you'd also delete the user from Firebase Auth using the Admin SDK
-    // await deleteFirebaseUser(userId);
     revalidatePath('/admin/users');
-    return { success: true, message: 'Usuário excluído com sucesso.' };
+    return { success: true, message: 'Usuário excluído do Firestore.' };
   } catch (error) {
     console.error(error);
-    return { success: false, message: 'Erro ao excluir usuário.' };
+    return { success: false, message: 'Erro ao excluir usuário do Firestore.' };
   }
 }
