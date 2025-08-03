@@ -47,6 +47,9 @@ export default function GraficosPage() {
   const [local, setLocal] = useState('todos');
   const [tipo, setTipo] = useState('todos');
   const [produtoCodigo, setProdutoCodigo] = useState('todos');
+  const [turno, setTurno] = useState('todos');
+  const [estado, setEstado] = useState('todos');
+
 
   // --- Combobox state ---
   const [open, setOpen] = useState(false)
@@ -99,6 +102,8 @@ export default function GraficosPage() {
       if (local !== 'todos') q = query(q, where('local', '==', local));
       if (tipo !== 'todos') q = query(q, where('tipo', '==', tipo));
       if (produtoCodigo !== 'todos') q = query(q, where('codigo', '==', produtoCodigo));
+      if (turno !== 'todos') q = query(q, where('turno', '==', turno));
+      if (estado !== 'todos') q = query(q, where('estado', '==', estado));
       
 
       const querySnapshot = await getDocs(q);
@@ -258,6 +263,17 @@ export default function GraficosPage() {
               </Select>
             </div>
              <div className="space-y-2">
+              <Label htmlFor="filtro-turno">Turno</Label>
+              <Select value={turno} onValueChange={setTurno}>
+                <SelectTrigger id="filtro-turno"><SelectValue placeholder="Todos" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos</SelectItem>
+                  <SelectItem value="1">1º Turno</SelectItem>
+                  <SelectItem value="2">2º Turno</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+             <div className="space-y-2">
               <Label htmlFor="filtro-tipo">Mercado</Label>
               <Select value={tipo} onValueChange={setTipo}>
                 <SelectTrigger id="filtro-tipo"><SelectValue placeholder="Todos" /></SelectTrigger>
@@ -319,6 +335,17 @@ export default function GraficosPage() {
                         </Command>
                     </PopoverContent>
                 </Popover>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="filtro-estado">Estado</Label>
+              <Select value={estado} onValueChange={setEstado}>
+                <SelectTrigger id="filtro-estado"><SelectValue placeholder="Todos" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos</SelectItem>
+                  <SelectItem value="Congelado">Congelado</SelectItem>
+                  <SelectItem value="Resfriado">Resfriado</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
           </div>

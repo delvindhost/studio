@@ -67,6 +67,7 @@ export default function VisualizarPage() {
   const [turno, setTurno] = useState('todos');
   const [tipo, setTipo] = useState('todos');
   const [produtoCodigo, setProdutoCodigo] = useState('todos');
+  const [estado, setEstado] = useState('todos');
   const [success, setSuccess] = useState<string | null>(null);
 
   // --- Combobox state ---
@@ -136,6 +137,7 @@ export default function VisualizarPage() {
       if (turno && turno !== 'todos') q = query(q, where('turno', '==', turno));
       if (tipo && tipo !== 'todos') q = query(q, where('tipo', '==', tipo));
       if (produtoCodigo !== 'todos') q = query(q, where('codigo', '==', produtoCodigo));
+      if (estado !== 'todos') q = query(q, where('estado', '==', estado));
 
 
       const querySnapshot = await getDocs(q);
@@ -376,6 +378,17 @@ export default function VisualizarPage() {
                         </Command>
                     </PopoverContent>
                 </Popover>
+            </div>
+             <div className="space-y-2">
+              <Label htmlFor="filtro-estado">Estado</Label>
+              <Select value={estado} onValueChange={setEstado}>
+                <SelectTrigger id="filtro-estado"><SelectValue placeholder="Todos" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos</SelectItem>
+                  <SelectItem value="Congelado">Congelado</SelectItem>
+                  <SelectItem value="Resfriado">Resfriado</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <div className="flex flex-wrap gap-4 mt-6">
