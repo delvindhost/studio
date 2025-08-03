@@ -33,7 +33,7 @@ export default function AppLayout({
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-screen w-full bg-background">
       <Sidebar isSidebarOpen={isSidebarOpen} setSidebarOpen={setSidebarOpen} />
       <div className="flex flex-1 flex-col">
         <Header setSidebarOpen={setSidebarOpen} />
