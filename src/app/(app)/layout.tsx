@@ -1,3 +1,4 @@
+
 "use client";
 import React, { useState } from "react";
 import Sidebar from "@/components/layout/Sidebar";
@@ -35,9 +36,11 @@ export default function AppLayout({
   return (
     <div className="flex min-h-screen w-full bg-background">
       <Sidebar isSidebarOpen={isSidebarOpen} setSidebarOpen={setSidebarOpen} />
-      <div className="flex flex-1 flex-col">
+      <div className="flex flex-1 flex-col md:ml-64">
         <Header setSidebarOpen={setSidebarOpen} />
-        <main className="flex-1 p-4 sm:p-6 md:p-8">{children}</main>
+        <main className="flex-1 p-4 sm:p-6 md:p-8 overflow-y-auto">
+            {children}
+        </main>
       </div>
     </div>
   );
