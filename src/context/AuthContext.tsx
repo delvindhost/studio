@@ -46,7 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
            const defaultUserData = {
                uid: firebaseUser.uid,
                email: firebaseUser.email,
-               role: 'user'
+               role: 'user' as 'admin' | 'user'
            };
            await setDoc(userDocRef, { email: firebaseUser.email, role: 'user' });
            setUser(defaultUserData);
@@ -61,9 +61,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    // Se não estiver carregando, não houver usuário E não estiver na página de login, redirecione para o login.
     if (!loading && !user && pathname !== '/login') {
       router.push('/login');
     }
+     // Se não estiver carregando, houver um usuário E estiver na página de login, redirecione para a home.
+    if (!loading && user && pathname === '/login') {
+        if(user.role === 'admin') {
+            router.push('/admin');
+        } else {
+            router.push('/');
+        }
+    }
+
   }, [user, loading, pathname, router]);
 
   const login = async (email: string, password: string) => {
@@ -83,11 +93,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await setDoc(userDocRef, { email: firebaseUser.email, role: 'user' });
       }
 
-      setUser({
-          uid: firebaseUser.uid,
-          email: firebaseUser.email,
-          role: role as 'admin' | 'user',
-      });
+      // O setUser aqui vai disparar o useEffect acima, que cuidará do redirecionamento
+      // não é mais necessário setar o usuário aqui pois o onAuthStateChanged fará isso.
+      
       return { success: true, role };
 
     } catch (error) {
@@ -98,7 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     await signOut(auth);
-    setUser(null);
+    // O setUser(null) será chamado pelo onAuthStateChanged, que vai disparar o useEffect de redirecionamento.
     router.push('/login');
   };
 

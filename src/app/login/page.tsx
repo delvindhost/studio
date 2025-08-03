@@ -12,7 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState('cq.uia@ind.com.br');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
@@ -23,17 +23,18 @@ export default function LoginPage() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const { success, role } = await login(email, password);
-      if (success) {
+      const result = await login(email, password);
+      if (result.success) {
         toast({
           title: "Login bem-sucedido!",
           description: "Redirecionando...",
         });
-        if (role === 'admin') {
-          router.push('/admin');
-        } else {
-          router.push('/');
-        }
+        // O redirecionamento agora é centralizado no AuthContext
+        // if (result.role === 'admin') {
+        //   router.push('/admin');
+        // } else {
+        //   router.push('/');
+        // }
       } else {
         throw new Error("Credenciais inválidas");
       }
