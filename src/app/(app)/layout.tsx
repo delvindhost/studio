@@ -6,6 +6,8 @@ import Header from "@/components/layout/Header";
 import { useAuth } from "@/context/AuthContext";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { signOut } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 
 export default function AppLayout({
   children,
@@ -16,11 +18,51 @@ export default function AppLayout({
   const router = useRouter();
   const [isSidebarOpen, setSidebarOpen] = useState(false);
 
+  const handleLogout = async () => {
+      await signOut(auth);
+      localStorage.removeItem('loginTimestamp');
+      localStorage.removeItem('userRole');
+      router.replace("/login");
+  };
+
+  const checkSession = () => {
+    const loginTimestamp = localStorage.getItem('loginTimestamp');
+    const userRole = localStorage.getItem('userRole');
+
+    if (loginTimestamp && userRole) {
+      const maxSessionTime = userRole === 'admin' 
+        ? 24 * 60 * 60 * 1000 // 24 hours
+        : 1 * 60 * 60 * 1000;  // 1 hour
+      
+      const elapsedTime = Date.now() - parseInt(loginTimestamp, 10);
+
+      if (elapsedTime > maxSessionTime) {
+        handleLogout();
+      }
+    } else if (!user && !loading) {
+        // Se não há dados de sessão mas o auth state ainda está carregando, espere.
+        // Se já carregou e não há usuário, e não há dados na sessão, pode ser um estado inválido.
+        router.replace("/login");
+    }
+  };
+
   useEffect(() => {
     if (!loading && !user) {
       router.replace("/login");
+    } else if (user) {
+       checkSession();
     }
+     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, loading, router]);
+
+   useEffect(() => {
+    // Adiciona listeners para verificar a sessão quando o usuário interage com a página
+    window.addEventListener('focus', checkSession);
+    return () => {
+      window.removeEventListener('focus', checkSession);
+    };
+     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
 
   if (loading || !user) {

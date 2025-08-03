@@ -41,6 +41,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         const isKnownAdminEmail = user.email === 'cq.uia@ind.com.br';
 
+        const setupSession = (profile: UserProfile) => {
+            setUserProfile(profile);
+            localStorage.setItem('loginTimestamp', Date.now().toString());
+            localStorage.setItem('userRole', profile.role);
+        }
+
         if (isKnownAdminEmail && !userDoc.exists()) {
             const adminProfile: UserProfile = { 
                 nome: 'Admin UIA',
@@ -50,17 +56,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 permissions: ['/', '/registrar', '/visualizar', '/graficos', '/usuarios', '/configuracoes', 'delete_records'] 
             };
             await setDoc(userDocRef, adminProfile, { merge: true });
-            setUserProfile(adminProfile);
+            setupSession(adminProfile);
         } else if (userDoc.exists()) {
-            setUserProfile(userDoc.data() as UserProfile);
+            const profile = userDoc.data() as UserProfile;
+            setupSession(profile);
         } else {
-            // User is authenticated but has no profile in Firestore.
-            // This can happen briefly during the first login signup process.
             setUserProfile(null);
         }
       } else {
         setUser(null);
         setUserProfile(null);
+        localStorage.removeItem('loginTimestamp');
+        localStorage.removeItem('userRole');
       }
       setLoading(false);
     });
