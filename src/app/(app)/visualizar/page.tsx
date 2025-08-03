@@ -249,7 +249,6 @@ export default function VisualizarPage() {
       XLSX.writeFile(wb, "relatorio_temperaturas.xlsx");
   };
 
-
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-primary">Visualizar Registros</h1>
