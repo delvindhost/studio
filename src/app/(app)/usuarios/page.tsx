@@ -2,14 +2,31 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { collection, getDocs, addDoc, doc, setDoc, getDoc } from 'firebase/firestore';
+import { collection, getDocs, addDoc, doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { db, auth as mainAuth } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+  DialogClose,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Loader2, UserPlus, Users, ShieldCheck, KeyRound, User, Trash2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
@@ -150,6 +167,17 @@ export default function UsuariosPage() {
     }
   };
   
+  const handleDeleteUser = async (userIdToDelete: string) => {
+    try {
+      await deleteDoc(doc(db, 'users', userIdToDelete));
+      showAlert('Usuário removido com sucesso!', 'success');
+      fetchUsers();
+    } catch (error) {
+        showAlert('Erro ao remover usuário.', 'error');
+        console.error("Error deleting user: ", error);
+    }
+  }
+
   if (authLoading || loading) {
     return (
       <div className="flex h-full w-full items-center justify-center">
@@ -247,9 +275,30 @@ export default function UsuariosPage() {
                         <p className="text-sm text-muted-foreground flex items-center gap-2"><KeyRound className='h-4 w-4'/> Matrícula: {user.matricula}</p>
                         <p className="text-sm text-muted-foreground flex items-center gap-2"><ShieldCheck className='h-4 w-4'/> Permissões: {user.permissions.map(p => navItems.find(n => n.href === p)?.label || p).join(', ')}</p>
                     </div>
-                    <Button variant="ghost" size="icon">
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Essa ação não pode ser desfeita. Isso excluirá permanentemente o usuário.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => handleDeleteUser(user.id)}
+                            className='bg-destructive hover:bg-destructive/90'
+                          >
+                            Sim, excluir
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                 </div>
               ))}
             </div>

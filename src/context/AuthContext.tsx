@@ -45,13 +45,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         } else {
            // This case is for the initial admin user creation
            if (user.email === 'cq.uia@ind.com.br') {
-            const adminProfile: Omit<UserProfile, 'matricula'> & {role: 'admin'} = { 
+            const adminProfile: UserProfile = { 
                 nome: 'Admin UIA',
+                matricula: 'admin', // Adicionado para consistência
                 role: 'admin', 
                 permissions: ['/','/visualizar','/graficos','/usuarios','/configuracoes'] 
             };
             await setDoc(userDocRef, adminProfile);
-            setUserProfile(adminProfile as UserProfile);
+            setUserProfile(adminProfile);
           } else {
              // Fallback for users authenticated but without a profile
              setUserProfile({ role: 'user', permissions: [], nome: 'Usuário', matricula: '' });
