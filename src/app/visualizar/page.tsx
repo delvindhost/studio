@@ -38,9 +38,9 @@ export default function VisualizarPage() {
   const hoje = new Date().toISOString().split('T')[0];
   const [dataInicio, setDataInicio] = useState(hoje);
   const [dataFim, setDataFim] = useState(hoje);
-  const [local, setLocal] = useState('');
-  const [turno, setTurno] = useState('');
-  const [tipo, setTipo] = useState('');
+  const [local, setLocal] = useState('todos');
+  const [turno, setTurno] = useState('todos');
+  const [tipo, setTipo] = useState('todos');
 
   const carregarRegistros = async () => {
     setLoading(true);
@@ -56,13 +56,13 @@ export default function VisualizarPage() {
         orderBy('data', 'desc')
       );
 
-      if (local) {
+      if (local && local !== 'todos') {
         q = query(q, where('local', '==', local));
       }
-      if (turno) {
+      if (turno && turno !== 'todos') {
         q = query(q, where('turno', '==', turno));
       }
-      if (tipo) {
+      if (tipo && tipo !== 'todos') {
         q = query(q, where('tipo', '==', tipo));
       }
 
@@ -114,7 +114,7 @@ export default function VisualizarPage() {
               <Select value={local} onValueChange={setLocal}>
                 <SelectTrigger id="filtro-local"><SelectValue placeholder="Todos" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos os locais</SelectItem>
+                  <SelectItem value="todos">Todos os locais</SelectItem>
                    <SelectGroup>
                         <SelectLabel>Giros Freezer</SelectLabel>
                         <SelectItem value="Giro Freezer 1">Giro Freezer 1</SelectItem>
@@ -142,7 +142,7 @@ export default function VisualizarPage() {
               <Select value={turno} onValueChange={setTurno}>
                 <SelectTrigger id="filtro-turno"><SelectValue placeholder="Todos" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos</SelectItem>
+                  <SelectItem value="todos">Todos</SelectItem>
                   <SelectItem value="1">1º Turno</SelectItem>
                   <SelectItem value="2">2º Turno</SelectItem>
                 </SelectContent>
@@ -153,7 +153,7 @@ export default function VisualizarPage() {
               <Select value={tipo} onValueChange={setTipo}>
                 <SelectTrigger id="filtro-tipo"><SelectValue placeholder="Todos" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos</SelectItem>
+                  <SelectItem value="todos">Todos</SelectItem>
                   <SelectItem value="MI">MI</SelectItem>
                   <SelectItem value="ME">ME</SelectItem>
                 </SelectContent>
