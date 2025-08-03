@@ -6,6 +6,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut, User } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { Loader2 } from 'lucide-react';
 
 interface UserProfile {
     uid: string;
@@ -41,8 +42,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             role: userData.role || 'user',
           });
         } else {
-           // This case handles a user that exists in Auth but not Firestore.
-           // We will create a default user doc for them.
            const defaultUserData = {
                uid: firebaseUser.uid,
                email: firebaseUser.email,
@@ -61,19 +60,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    // Se não estiver carregando, não houver usuário E não estiver na página de login, redirecione para o login.
-    if (!loading && !user && pathname !== '/login') {
+    if (loading) return; 
+
+    const isAuthRoute = pathname === '/login';
+
+    if (!user && !isAuthRoute) {
       router.push('/login');
     }
-     // Se não estiver carregando, houver um usuário E estiver na página de login, redirecione para a home.
-    if (!loading && user && pathname === '/login') {
-        if(user.role === 'admin') {
-            router.push('/admin');
-        } else {
-            router.push('/');
-        }
-    }
 
+    if (user && isAuthRoute) {
+       router.push(user.role === 'admin' ? '/admin' : '/');
+    }
   }, [user, loading, pathname, router]);
 
   const login = async (email: string, password: string) => {
@@ -89,12 +86,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const userData = userDoc.data();
         role = userData.role || 'user';
       } else {
-        // If user doc doesn't exist, create one with default 'user' role
         await setDoc(userDocRef, { email: firebaseUser.email, role: 'user' });
       }
-
-      // O setUser aqui vai disparar o useEffect acima, que cuidará do redirecionamento
-      // não é mais necessário setar o usuário aqui pois o onAuthStateChanged fará isso.
       
       return { success: true, role };
 
@@ -106,11 +99,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     await signOut(auth);
-    // O setUser(null) será chamado pelo onAuthStateChanged, que vai disparar o useEffect de redirecionamento.
     router.push('/login');
   };
-
+  
   const value = { user, loading, login, logout };
+
+  if (loading) {
+     return (
+        <div className="flex min-h-screen items-center justify-center bg-background">
+            <Loader2 className="size-8 animate-spin text-primary" />
+        </div>
+    );
+  }
 
   return (
     <AuthContext.Provider value={value}>

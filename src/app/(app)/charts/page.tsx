@@ -1,3 +1,4 @@
+
 import { getTemperatureRecords } from "@/app/actions";
 import { ChartsView } from "@/components/charts/ChartsView";
 import { LineChart } from "lucide-react";

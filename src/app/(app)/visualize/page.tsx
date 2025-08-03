@@ -1,3 +1,4 @@
+
 import { getTemperatureRecords, deleteTemperatureRecord } from "@/app/actions";
 import { RecordsView } from "@/components/visualize/RecordsView";
 import { List } from "lucide-react";

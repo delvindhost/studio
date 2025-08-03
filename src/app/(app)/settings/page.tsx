@@ -1,3 +1,4 @@
+
 import { SettingsView } from "@/components/settings/SettingsView";
 import { performDataCleanup, performFullReset } from "@/app/actions";
 import { Settings } from "lucide-react";

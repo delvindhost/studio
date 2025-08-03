@@ -19,21 +19,6 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  async redirects() {
-    return [
-      {
-        source: '/',
-        destination: '/login',
-        permanent: false,
-        missing: [
-            {
-                type: 'cookie',
-                key: 'firebaseIdToken' // A cookie firebase auth sets
-            }
-        ]
-      },
-    ]
-  },
 };
 
 export default nextConfig;
