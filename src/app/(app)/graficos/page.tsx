@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { collection, query, where, getDocs, orderBy, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
@@ -12,9 +12,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGr
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { BarChart, LineChart, XAxis, YAxis, CartesianGrid, Tooltip, Bar, Line, ResponsiveContainer, Legend } from 'recharts';
-import { Loader2, Filter, ChevronsUpDown, Check } from 'lucide-react';
+import { Loader2, Filter, ChevronsUpDown, Check, FileText } from 'lucide-react';
 import { produtosPorCodigo } from '@/lib/produtos';
 import { cn } from '@/lib/utils';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 // Tipos
 type Registro = {
@@ -49,6 +51,11 @@ export default function GraficosPage() {
   const [produtoCodigo, setProdutoCodigo] = useState('todos');
   const [turno, setTurno] = useState('todos');
   const [estado, setEstado] = useState('todos');
+
+  // Refs for charts
+  const graficoProdutoRef = useRef<HTMLDivElement>(null);
+  const graficoLocalRef = useRef<HTMLDivElement>(null);
+  const graficoVariacaoRef = useRef<HTMLDivElement>(null);
 
 
   // --- Combobox state ---
@@ -135,6 +142,52 @@ export default function GraficosPage() {
     carregarDados();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  
+  const exportarGraficosPDF = async () => {
+    setLoading(true);
+    const doc = new jsPDF('p', 'mm', 'a4');
+    const chartRefs = [
+      { ref: graficoProdutoRef, title: 'Temperatura Média por Produto' },
+      { ref: graficoLocalRef, title: 'Média de Temperaturas por Local' },
+      { ref: graficoVariacaoRef, title: 'Variação de Temperaturas no Período' },
+    ];
+    
+    const imageMargin = 15;
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const imageWidth = pageWidth - imageMargin * 2;
+
+
+    try {
+        for (let i = 0; i < chartRefs.length; i++) {
+            const { ref, title } = chartRefs[i];
+            if (ref.current) {
+                const canvas = await html2canvas(ref.current, { 
+                    scale: 2, 
+                    useCORS: true,
+                    backgroundColor: '#ffffff' // Garante fundo branco
+                });
+                const imgData = canvas.toDataURL('image/png');
+                const imgHeight = (canvas.height * imageWidth) / canvas.width;
+
+                if (i > 0) {
+                    doc.addPage();
+                }
+                
+                doc.setFontSize(16);
+                doc.text(title, pageWidth / 2, imageMargin, { align: 'center' });
+                doc.addImage(imgData, 'PNG', imageMargin, imageMargin + 10, imageWidth, imgHeight);
+            }
+        }
+        doc.save('relatorio_graficos.pdf');
+    } catch (error) {
+        console.error("Erro ao exportar PDF:", error);
+        setError("Ocorreu um erro ao gerar o PDF dos gráficos.");
+    } finally {
+        setLoading(false);
+    }
+  };
+
 
   const dadosGraficoProduto = useMemo(() => {
     const data = registros.reduce((acc, reg) => {
@@ -354,6 +407,9 @@ export default function GraficosPage() {
               {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Filter className="mr-2 h-4 w-4" />}
               Atualizar Gráficos
             </Button>
+             <Button variant="outline" onClick={exportarGraficosPDF} disabled={loading || registros.length === 0}>
+                <FileText className="mr-2 h-4 w-4" /> Exportar PDF
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -363,8 +419,8 @@ export default function GraficosPage() {
         ) : error ? (
             <p className="text-center text-red-500 py-8">{error}</p>
         ) : (
-        <div className='space-y-6'>
-            <Card>
+        <div className='space-y-6' id="graficos-container">
+            <Card ref={graficoProdutoRef}>
                 <CardHeader>
                     <CardTitle>Temperatura Média por Produto</CardTitle>
                 </CardHeader>
@@ -381,7 +437,7 @@ export default function GraficosPage() {
                 </CardContent>
             </Card>
 
-            <Card>
+            <Card ref={graficoLocalRef}>
                 <CardHeader>
                     <CardTitle>Média de Temperaturas por Local</CardTitle>
                 </CardHeader>
@@ -401,7 +457,7 @@ export default function GraficosPage() {
                 </CardContent>
             </Card>
 
-             <Card>
+             <Card ref={graficoVariacaoRef}>
                 <CardHeader>
                     <CardTitle>Variação de Temperaturas no Período</CardTitle>
                 </CardHeader>

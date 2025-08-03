@@ -183,7 +183,7 @@ export default function VisualizarPage() {
         alert("Não há dados para exportar.");
         return;
     }
-    const doc = new jsPDF() as jsPDFWithAutoTable;
+    const doc = new jsPDF({ orientation: 'landscape' }) as jsPDFWithAutoTable;
     doc.text("Relatório de Temperaturas", 14, 16);
     doc.autoTable({
         head: [['Data', 'Hora', 'Turno', 'Local', 'Produto', 'Tipo', 'Estado', 'T. Início', 'T. Meio', 'T. Fim']],
@@ -199,7 +199,10 @@ export default function VisualizarPage() {
             reg.temperaturas.meio.toFixed(1),
             reg.temperaturas.fim.toFixed(1)
         ]),
-        startY: 20
+        startY: 20,
+        headStyles: {
+            fillColor: [75, 0, 130] // Cor primária (Deep Indigo)
+        }
     });
     doc.save('relatorio_temperaturas.pdf');
   };
