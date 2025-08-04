@@ -35,6 +35,7 @@ export default function AppLayout({
       return;
     }
     
+    // This function runs only on the client
     const checkSession = () => {
       const loginTimestamp = localStorage.getItem('loginTimestamp');
       const userRole = localStorage.getItem('userRole');
@@ -42,19 +43,24 @@ export default function AppLayout({
       if (loginTimestamp && userRole) {
         const maxSessionTime = userRole === 'admin' 
           ? 24 * 60 * 60 * 1000 // 24 hours
-          : 1 * 60 * 60 * 1000;  // 1 hour
+          : 12 * 60 * 60 * 1000;  // 12 hours
         
         const elapsedTime = Date.now() - parseInt(loginTimestamp, 10);
 
         if (elapsedTime > maxSessionTime) {
           handleLogout();
         }
+      } else {
+        // If session info is missing, force logout to be safe
+        handleLogout();
       }
     };
     
     checkSession();
+    // Add an event listener to re-check when the user focuses the window
     window.addEventListener('focus', checkSession);
     
+    // Clean up the event listener when the component unmounts
     return () => {
       window.removeEventListener('focus', checkSession);
     };
