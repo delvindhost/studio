@@ -27,41 +27,38 @@ export default function AppLayout({
       router.replace("/login");
   },[router]);
 
-  const checkSession = useCallback(() => {
-    if (typeof window === 'undefined') return;
-
-    const loginTimestamp = localStorage.getItem('loginTimestamp');
-    const userRole = localStorage.getItem('userRole');
-
-    if (loginTimestamp && userRole) {
-      const maxSessionTime = userRole === 'admin' 
-        ? 24 * 60 * 60 * 1000 // 24 hours
-        : 1 * 60 * 60 * 1000;  // 1 hour
-      
-      const elapsedTime = Date.now() - parseInt(loginTimestamp, 10);
-
-      if (elapsedTime > maxSessionTime) {
-        handleLogout();
-      }
-    }
-  }, [handleLogout]);
-
   useEffect(() => {
     if (loading) return;
 
     if (!user) {
       router.replace("/login");
-    } else {
-       checkSession();
-       window.addEventListener('focus', checkSession);
+      return;
     }
     
-    return () => {
-      if (typeof window !== 'undefined') {
-        window.removeEventListener('focus', checkSession);
+    const checkSession = () => {
+      const loginTimestamp = localStorage.getItem('loginTimestamp');
+      const userRole = localStorage.getItem('userRole');
+
+      if (loginTimestamp && userRole) {
+        const maxSessionTime = userRole === 'admin' 
+          ? 24 * 60 * 60 * 1000 // 24 hours
+          : 1 * 60 * 60 * 1000;  // 1 hour
+        
+        const elapsedTime = Date.now() - parseInt(loginTimestamp, 10);
+
+        if (elapsedTime > maxSessionTime) {
+          handleLogout();
+        }
       }
     };
-  }, [user, loading, router, checkSession]);
+    
+    checkSession();
+    window.addEventListener('focus', checkSession);
+    
+    return () => {
+      window.removeEventListener('focus', checkSession);
+    };
+  }, [user, loading, router, handleLogout]);
 
 
   if (loading || !user) {
