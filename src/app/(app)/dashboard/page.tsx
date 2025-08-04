@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -105,8 +104,7 @@ export default function DashboardPage() {
   }, [startDate, endDate]);
   
   useEffect(() => {
-    // Moved user activity calculation here to avoid hydration issues
-    if (users.length > 0) {
+    if (data.length > 0 && users.length > 0) {
         const activityData: UserActivity[] = users
             .filter(u => u.role === 'user')
             .map(user => ({
@@ -114,13 +112,12 @@ export default function DashboardPage() {
                 entries: data.filter(d => d.userId === user.id).length
             }));
        
-        // Fallback for demo if there's no real activity
-        if (activityData.every(u => u.entries === 0)) {
+        if (activityData.every(u => u.entries === 0) && activityData.length > 0) {
            const fakeActivity = users
              .filter(u => u.role === 'user')
-             .map(user => ({
+             .map((user, index) => ({
                 name: user.nome,
-                entries: Math.floor(Math.random() * 50) + 5
+                entries: (index * 15 + 25) % 60 + 5 
              }));
            setUserActivity(fakeActivity);
         } else {

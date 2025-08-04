@@ -1,4 +1,3 @@
-
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
 import Sidebar from "@/components/layout/Sidebar";
@@ -19,55 +18,56 @@ export default function AppLayout({
   const [isSidebarOpen, setSidebarOpen] = useState(false);
 
   const handleLogout = useCallback(async () => {
+    try {
       if (typeof window !== 'undefined') {
         localStorage.removeItem('loginTimestamp');
         localStorage.removeItem('userRole');
       }
       await signOut(auth);
       router.replace("/login");
-  },[router]);
+    } catch (error) {
+      console.error("Error signing out: ", error);
+      // Fallback redirect
+      router.replace("/login");
+    }
+  }, [router]);
 
   useEffect(() => {
-    if (loading) return;
-
+    if (loading) {
+      return;
+    }
     if (!user) {
       router.replace("/login");
       return;
     }
-    
-    // This function runs only on the client
-    const checkSession = () => {
-        if (typeof window === 'undefined') return;
 
+    const checkSession = () => {
+      if (typeof window !== 'undefined') {
         const loginTimestamp = localStorage.getItem('loginTimestamp');
         const userRole = localStorage.getItem('userRole');
 
-        if (loginTimestamp && userRole) {
-            const maxSessionTime = userRole === 'admin' 
+        if (!loginTimestamp || !userRole) {
+          handleLogout();
+          return;
+        }
+
+        const maxSessionTime = userRole === 'admin' 
             ? 24 * 60 * 60 * 1000 // 24 hours
             : 12 * 60 * 60 * 1000;  // 12 hours
             
-            const elapsedTime = Date.now() - parseInt(loginTimestamp, 10);
+        const elapsedTime = Date.now() - parseInt(loginTimestamp, 10);
 
-            if (elapsedTime > maxSessionTime) {
-            handleLogout();
-            }
-        } else {
-            // If session info is missing, force logout to be safe
-            handleLogout();
+        if (elapsedTime > maxSessionTime) {
+          handleLogout();
         }
+      }
     };
     
     checkSession();
-    // Add an event listener to re-check when the user focuses the window
-    window.addEventListener('focus', checkSession);
-    
-    // Clean up the event listener when the component unmounts
-    return () => {
-      window.removeEventListener('focus', checkSession);
-    };
-  }, [user, loading, router, handleLogout]);
+    const intervalId = setInterval(checkSession, 60 * 1000); // Check every minute
 
+    return () => clearInterval(intervalId);
+  }, [user, loading, router, handleLogout]);
 
   if (loading || !user) {
     return (
@@ -89,5 +89,3 @@ export default function AppLayout({
     </div>
   );
 }
-
-    
