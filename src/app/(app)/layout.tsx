@@ -19,13 +19,17 @@ export default function AppLayout({
   const [isSidebarOpen, setSidebarOpen] = useState(false);
 
   const handleLogout = useCallback(async () => {
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('loginTimestamp');
+        localStorage.removeItem('userRole');
+      }
       await signOut(auth);
-      localStorage.removeItem('loginTimestamp');
-      localStorage.removeItem('userRole');
       router.replace("/login");
   },[router]);
 
   const checkSession = useCallback(() => {
+    if (typeof window === 'undefined') return;
+
     const loginTimestamp = localStorage.getItem('loginTimestamp');
     const userRole = localStorage.getItem('userRole');
 
@@ -39,25 +43,25 @@ export default function AppLayout({
       if (elapsedTime > maxSessionTime) {
         handleLogout();
       }
-    } else if (!user && !loading) {
-        router.replace("/login");
     }
-  }, [user, loading, router, handleLogout]);
+  }, [handleLogout]);
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.replace("/login");
-    } else if (user) {
-       checkSession();
-    }
-  }, [user, loading, router, checkSession]);
+    if (loading) return;
 
-   useEffect(() => {
-    window.addEventListener('focus', checkSession);
+    if (!user) {
+      router.replace("/login");
+    } else {
+       checkSession();
+       window.addEventListener('focus', checkSession);
+    }
+    
     return () => {
-      window.removeEventListener('focus', checkSession);
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('focus', checkSession);
+      }
     };
-  }, [checkSession]);
+  }, [user, loading, router, checkSession]);
 
 
   if (loading || !user) {
