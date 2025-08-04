@@ -11,9 +11,9 @@ const firebaseConfig = {
   apiKey: "AIzaSyAhDyVaRlMyxIwSAIMcsB15zLKKJYdTvt0",
   authDomain: "controle-q.firebaseapp.com",
   projectId: "controle-q",
-  storageBucket: "controle-q.firebasestorage.app",
+  storageBucket: "controle-q.appspot.com",
   messagingSenderId: "611076568023",
-  appId: "1:611076568023:web:1673b0fc82d1f42584d192",
+  appId: "1:611076568023:web:50f9f0c2e4ce5fcb84d192",
   measurementId: "G-52K5PJ8WE3"
 };
 
