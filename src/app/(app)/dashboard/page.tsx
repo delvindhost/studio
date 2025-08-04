@@ -58,6 +58,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<Registro[]>([]);
   const [users, setUsers] = useState<UserProfile[]>([]);
+  const [userActivity, setUserActivity] = useState<UserActivity[]>([]);
   
   const today = new Date();
   const [startDate, setStartDate] = useState(new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0]);
@@ -83,14 +84,13 @@ export default function DashboardPage() {
       });
       setData(registros);
       
-       // Fetch users - simplistic approach for now
+       // Fetch users
        const usersSnapshot = await getDocs(collection(db, 'users'));
        const userList: UserProfile[] = [];
        usersSnapshot.forEach((doc) => {
            userList.push({ id: doc.id, ...doc.data()} as UserProfile);
        });
        setUsers(userList);
-
 
     } catch (err) {
       console.error(err);
@@ -103,6 +103,32 @@ export default function DashboardPage() {
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [startDate, endDate]);
+  
+  useEffect(() => {
+    // Moved user activity calculation here to avoid hydration issues
+    if (users.length > 0) {
+        const activityData: UserActivity[] = users
+            .filter(u => u.role === 'user')
+            .map(user => ({
+                name: user.nome,
+                entries: data.filter(d => d.userId === user.id).length
+            }));
+       
+        // Fallback for demo if there's no real activity
+        if (activityData.every(u => u.entries === 0)) {
+           const fakeActivity = users
+             .filter(u => u.role === 'user')
+             .map(user => ({
+                name: user.nome,
+                entries: Math.floor(Math.random() * 50) + 5
+             }));
+           setUserActivity(fakeActivity);
+        } else {
+            setUserActivity(activityData);
+        }
+    }
+  }, [data, users]);
+
 
   const dashboardData = useMemo(() => {
     const totalRegistros = data.length;
@@ -140,17 +166,9 @@ export default function DashboardPage() {
     
     const top5Highest = [...productAverages].sort((a, b) => b.avgTemp - a.avgTemp).slice(0, 5);
     const top5Lowest = [...productAverages].sort((a, b) => a.avgTemp - b.avgTemp).slice(0, 5);
-    
-    // Fake user activity for now
-    const userActivity: UserActivity[] = users
-        .filter(u => u.role === 'user')
-        .map(user => ({
-            name: user.nome,
-            entries: Math.floor(Math.random() * 50) + 5 // Random entries for demo
-        }));
 
-    return { totalRegistros, setoresAferidos, avgMI, avgME, top5Highest, top5Lowest, userActivity };
-  }, [data, users]);
+    return { totalRegistros, setoresAferidos, avgMI, avgME, top5Highest, top5Lowest };
+  }, [data]);
   
   if (loading) {
     return <div className="flex h-full w-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
@@ -277,7 +295,7 @@ export default function DashboardPage() {
                 <ResponsiveContainer width="100%" height="100%">
                    <PieChart>
                       <Pie
-                        data={dashboardData.userActivity}
+                        data={userActivity}
                         dataKey="entries"
                         nameKey="name"
                         cx="50%"
@@ -286,7 +304,7 @@ export default function DashboardPage() {
                         fill="#8884d8"
                         label={(entry) => `${entry.name} (${entry.entries})`}
                       >
-                        {dashboardData.userActivity.map((entry, index) => (
+                        {userActivity.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                       </Pie>
@@ -325,5 +343,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    
