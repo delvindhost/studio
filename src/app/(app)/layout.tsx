@@ -1,6 +1,6 @@
 
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 import { useAuth } from "@/context/AuthContext";
@@ -18,14 +18,14 @@ export default function AppLayout({
   const router = useRouter();
   const [isSidebarOpen, setSidebarOpen] = useState(false);
 
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async () => {
       await signOut(auth);
       localStorage.removeItem('loginTimestamp');
       localStorage.removeItem('userRole');
       router.replace("/login");
-  };
+  },[router]);
 
-  const checkSession = () => {
+  const checkSession = useCallback(() => {
     const loginTimestamp = localStorage.getItem('loginTimestamp');
     const userRole = localStorage.getItem('userRole');
 
@@ -40,11 +40,9 @@ export default function AppLayout({
         handleLogout();
       }
     } else if (!user && !loading) {
-        // Se não há dados de sessão mas o auth state ainda está carregando, espere.
-        // Se já carregou e não há usuário, e não há dados na sessão, pode ser um estado inválido.
         router.replace("/login");
     }
-  };
+  }, [user, loading, router, handleLogout]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -52,17 +50,14 @@ export default function AppLayout({
     } else if (user) {
        checkSession();
     }
-     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, loading, router]);
+  }, [user, loading, router, checkSession]);
 
    useEffect(() => {
-    // Adiciona listeners para verificar a sessão quando o usuário interage com a página
     window.addEventListener('focus', checkSession);
     return () => {
       window.removeEventListener('focus', checkSession);
     };
-     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [checkSession]);
 
 
   if (loading || !user) {
