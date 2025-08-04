@@ -37,23 +37,25 @@ export default function AppLayout({
     
     // This function runs only on the client
     const checkSession = () => {
-      const loginTimestamp = localStorage.getItem('loginTimestamp');
-      const userRole = localStorage.getItem('userRole');
+        if (typeof window === 'undefined') return;
 
-      if (loginTimestamp && userRole) {
-        const maxSessionTime = userRole === 'admin' 
-          ? 24 * 60 * 60 * 1000 // 24 hours
-          : 12 * 60 * 60 * 1000;  // 12 hours
-        
-        const elapsedTime = Date.now() - parseInt(loginTimestamp, 10);
+        const loginTimestamp = localStorage.getItem('loginTimestamp');
+        const userRole = localStorage.getItem('userRole');
 
-        if (elapsedTime > maxSessionTime) {
-          handleLogout();
+        if (loginTimestamp && userRole) {
+            const maxSessionTime = userRole === 'admin' 
+            ? 24 * 60 * 60 * 1000 // 24 hours
+            : 12 * 60 * 60 * 1000;  // 12 hours
+            
+            const elapsedTime = Date.now() - parseInt(loginTimestamp, 10);
+
+            if (elapsedTime > maxSessionTime) {
+            handleLogout();
+            }
+        } else {
+            // If session info is missing, force logout to be safe
+            handleLogout();
         }
-      } else {
-        // If session info is missing, force logout to be safe
-        handleLogout();
-      }
     };
     
     checkSession();
@@ -87,3 +89,5 @@ export default function AppLayout({
     </div>
   );
 }
+
+    
