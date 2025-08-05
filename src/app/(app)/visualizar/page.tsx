@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
@@ -24,7 +23,7 @@ import {
 } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { Loader2, Filter, FileDown, FileText, MapPin, Barcode, Clock, Thermometer, Snowflake, Tag, Play, Pause, StopCircle, Trash2, ChevronsUpDown, Check, ChevronDown, User, LayoutGrid, Rows3 } from 'lucide-react';
+import { Loader2, Filter, FileDown, FileText, MapPin, Barcode, Clock, Thermometer, Snowflake, Tag, Play, Pause, StopCircle, Trash2, ChevronsUpDown, Check, ChevronDown, LayoutGrid, Rows3 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -35,7 +34,7 @@ import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "@/components/ui/collapsible"
+} from "@/components/ui/collapsible";
 
 
 // Tipos
@@ -456,7 +455,7 @@ export default function VisualizarPage() {
       {error && !loading && <p className="text-center text-red-500 py-4">{error}</p>}
       {success && !loading && <p className="text-center text-green-500 py-4">{success}</p>}
       
-      {!loading && registros.length > 0 && viewMode === 'cards' && (
+      {!loading && !error && registros.length > 0 && viewMode === 'cards' && (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {registros.map((reg) => (
             <Card key={reg.id} className="shadow-lg flex flex-col">
@@ -540,7 +539,7 @@ export default function VisualizarPage() {
         </div>
       )}
 
-      {!loading && registros.length > 0 && viewMode === 'table' && (
+      {!loading && !error && registros.length > 0 && viewMode === 'table' && (
         <Card>
             <CardContent className="p-0">
                 <div className="overflow-x-auto">
