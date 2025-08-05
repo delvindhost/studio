@@ -1,12 +1,10 @@
 "use client";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 import { useAuth } from "@/context/AuthContext";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { signOut } from "firebase/auth";
-import { auth } from "@/lib/firebase";
 
 export default function AppLayout({
   children,
@@ -17,60 +15,11 @@ export default function AppLayout({
   const router = useRouter();
   const [isSidebarOpen, setSidebarOpen] = useState(false);
 
-  const handleLogout = useCallback(async () => {
-    try {
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('loginTimestamp');
-        localStorage.removeItem('userRole');
-      }
-      await signOut(auth);
-      router.replace("/login");
-    } catch (error) {
-      console.error("Error signing out: ", error);
-      // Fallback redirect
-      router.replace("/login");
-    }
-  }, [router]);
-
   useEffect(() => {
-    if (loading) {
-      return;
-    }
-    if (!user) {
+    if (!loading && !user) {
       router.replace("/login");
-      return;
     }
-
-    const checkSession = () => {
-      // Ensure this code only runs on the client
-      if (typeof window !== 'undefined') {
-        const loginTimestamp = localStorage.getItem('loginTimestamp');
-        const userRole = localStorage.getItem('userRole');
-
-        if (!loginTimestamp || !userRole) {
-          handleLogout();
-          return;
-        }
-
-        const maxSessionTime = userRole === 'admin' 
-            ? 24 * 60 * 60 * 1000 // 24 hours
-            : 12 * 60 * 60 * 1000;  // 12 hours
-            
-        const elapsedTime = Date.now() - parseInt(loginTimestamp, 10);
-
-        if (elapsedTime > maxSessionTime) {
-          handleLogout();
-        }
-      }
-    };
-    
-    checkSession();
-    // Set an interval to check the session periodically
-    const intervalId = setInterval(checkSession, 60 * 1000); // Check every minute
-
-    // Clear interval on component unmount
-    return () => clearInterval(intervalId);
-  }, [user, loading, router, handleLogout]);
+  }, [user, loading, router]);
 
   if (loading || !user) {
     return (
