@@ -42,6 +42,7 @@ export default function AppLayout({
     }
 
     const checkSession = () => {
+      // Ensure this code only runs on the client
       if (typeof window !== 'undefined') {
         const loginTimestamp = localStorage.getItem('loginTimestamp');
         const userRole = localStorage.getItem('userRole');
@@ -64,8 +65,10 @@ export default function AppLayout({
     };
     
     checkSession();
+    // Set an interval to check the session periodically
     const intervalId = setInterval(checkSession, 60 * 1000); // Check every minute
 
+    // Clear interval on component unmount
     return () => clearInterval(intervalId);
   }, [user, loading, router, handleLogout]);
 
