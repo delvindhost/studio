@@ -599,7 +599,7 @@ export default function VisualizarPage() {
                                                 >
                                                   Sim, excluir
                                                 </AlertDialogAction>
-                                              </AlertDialogFooter>
+                                              </Footer>
                                             </AlertDialogContent>
                                           </AlertDialog>
                                       </TableCell>
