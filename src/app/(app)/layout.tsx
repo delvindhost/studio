@@ -17,14 +17,13 @@ export default function AppLayout({
   const [isSidebarOpen, setSidebarOpen] = React.useState(false);
 
   useEffect(() => {
-    // Wait until loading is complete before checking for user profile
+    // Apenas redireciona se o carregamento terminou e não há perfil
     if (!loading && !userProfile) {
       router.replace("/login");
     }
   }, [userProfile, loading, router]);
 
-  // While the auth state is loading, show a full-screen loader.
-  // This is the source of the infinite spinner if the loading state is never resolved.
+  // Enquanto a autenticação estiver sendo verificada, mostre um loader.
   if (loading) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
@@ -33,8 +32,8 @@ export default function AppLayout({
     );
   }
 
-  // If loading is finished and we have a user profile, render the app.
-  // This part is only reached if loading is false and a user profile exists.
+  // Se o carregamento terminou e temos um perfil de usuário, renderize a aplicação.
+  // O useEffect acima já terá tratado o caso de não haver perfil.
   if (userProfile) {
     return (
       <div className="flex min-h-screen w-full bg-background">
@@ -49,8 +48,8 @@ export default function AppLayout({
     );
   }
 
-  // If loading is finished and there's no user (the useEffect above will handle the redirect),
-  // return a loader to avoid a flash of content before the redirect happens.
+  // Se o carregamento terminou e não há perfil, o useEffect já está redirecionando.
+  // Renderize um loader para evitar um flash de tela em branco durante o redirecionamento.
   return (
     <div className="flex h-screen w-full items-center justify-center bg-background">
       <Loader2 className="h-8 w-8 animate-spin text-primary" />
