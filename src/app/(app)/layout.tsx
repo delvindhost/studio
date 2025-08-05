@@ -1,3 +1,4 @@
+
 "use client";
 import React, { useState, useEffect } from "react";
 import Sidebar from "@/components/layout/Sidebar";
@@ -11,21 +12,16 @@ export default function AppLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, userProfile, loading } = useAuth();
+  const { userProfile, loading } = useAuth();
   const router = useRouter();
   const [isSidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
-    // A condição !loading garante que só vamos verificar o usuário
-    // depois que o onAuthStateChanged do Firebase terminar a verificação inicial.
-    // Se, após o carregamento, não houver usuário ou perfil, redireciona.
-    if (!loading && (!user || !userProfile)) {
+    if (!loading && !userProfile) {
       router.replace("/login");
     }
-  }, [user, userProfile, loading, router]);
+  }, [userProfile, loading, router]);
 
-  // Exibe a tela de carregamento enquanto a verificação de autenticação
-  // e o carregamento do perfil estiverem em andamento.
   if (loading) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
@@ -34,9 +30,7 @@ export default function AppLayout({
     );
   }
 
-  // Se o usuário está logado e o perfil foi carregado, renderiza o layout.
-  // A verificação no useEffect cuida do redirecionamento se algo estiver faltando.
-  if (user && userProfile) {
+  if (userProfile) {
     return (
       <div className="flex min-h-screen w-full bg-background">
         <Sidebar isSidebarOpen={isSidebarOpen} setSidebarOpen={setSidebarOpen} />
@@ -50,8 +44,6 @@ export default function AppLayout({
     );
   }
 
-  // Fallback para o caso de o redirecionamento ainda não ter acontecido.
-  // Isso também mostra a tela de carregamento.
   return (
     <div className="flex h-screen w-full items-center justify-center bg-background">
       <Loader2 className="h-8 w-8 animate-spin text-primary" />

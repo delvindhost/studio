@@ -42,7 +42,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           if (userDoc.exists()) {
             setUserProfile({ id: userDoc.id, ...userDoc.data() } as UserProfile);
           } else {
-            // This handles the special admin user on first login.
             if (user.email === 'cq.uia@ind.com.br') {
               const adminProfile: UserProfile = {
                 nome: 'Admin UIA',
@@ -54,20 +53,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               await setDoc(userDocRef, adminProfile, { merge: true });
               setUserProfile({ id: user.uid, ...adminProfile });
             } else {
-              // A regular user is authenticated but has no profile document.
-              // This is an invalid state, so we treat them as not logged in.
               setUserProfile(null);
             }
           }
         } catch (error) {
           console.error("Error fetching user profile:", error);
-          setUserProfile(null); // Ensure we don't get stuck in a bad state
+          setUserProfile(null);
         }
       } else {
         setUser(null);
         setUserProfile(null);
       }
-      // CRITICAL: Set loading to false only after all async operations are complete.
       setLoading(false);
     });
 
