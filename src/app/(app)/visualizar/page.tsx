@@ -1,6 +1,7 @@
+
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { collection, query, where, getDocs, orderBy, Timestamp, doc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
@@ -84,41 +85,6 @@ export default function VisualizarPage() {
   const [open, setOpen] = useState(false)
   const [searchValue, setSearchValue] = useState("");
 
-
-  const produtosOptions = useMemo(() => {
-    const options = Object.entries(produtosPorCodigo).map(([codigo, { produto }]) => ({
-      value: codigo,
-      label: `${codigo} - ${produto}`,
-    }));
-
-    if (!searchValue) {
-       return [{ value: 'todos', label: 'Todos os Produtos' }, ...options];
-    }
-    
-    const lowercasedSearch = searchValue.toLowerCase();
-
-    const filtered = options.filter(({ label }) =>
-      label.toLowerCase().includes(lowercasedSearch)
-    );
-
-    // Prioritize exact code match
-    filtered.sort((a, b) => {
-        const aIsExact = a.value === searchValue;
-        const bIsExact = b.value === searchValue;
-        if (aIsExact && !bIsExact) return -1;
-        if (!aIsExact && bIsExact) return 1;
-        return a.label.localeCompare(b.label);
-    });
-
-    return [{ value: 'todos', label: 'Todos os Produtos' }, ...filtered];
-  }, [searchValue]);
-
-  const canDeleteRecords = useMemo(() => {
-    if (!userProfile) return false;
-    return userProfile.role === 'admin' || (userProfile.permissions && userProfile.permissions.includes('delete_records'));
-  }, [userProfile]);
-
-
   const showAlert = (message: string, type: 'success' | 'error') => {
     if (type === 'success') {
       setSuccess(message);
@@ -132,8 +98,8 @@ export default function VisualizarPage() {
       setError(null);
     }, 3000);
   };
-
-  const carregarRegistros = async () => {
+  
+  const carregarRegistros = useCallback(async () => {
     setLoading(true);
     setError(null);
     setSuccess(null);
@@ -174,14 +140,14 @@ export default function VisualizarPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [dataInicio, dataFim, local, turno, tipo, produtoCodigo, estado]);
   
-   const handleDeleteRegistro = async (id: string) => {
+  const handleDeleteRegistro = async (id: string) => {
     try {
       await deleteDoc(doc(db, "registros", id));
       showAlert("Registro excluído com sucesso!", "success");
       // Recarrega a lista para refletir a exclusão
-      carregarRegistros(); 
+      await carregarRegistros(); 
     } catch (error) {
       showAlert("Erro ao excluir o registro.", "error");
       console.error("Erro ao excluir registro: ", error);
@@ -193,6 +159,40 @@ export default function VisualizarPage() {
     carregarRegistros();
      // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+
+  const produtosOptions = useMemo(() => {
+    const options = Object.entries(produtosPorCodigo).map(([codigo, { produto }]) => ({
+      value: codigo,
+      label: `${codigo} - ${produto}`,
+    }));
+
+    if (!searchValue) {
+       return [{ value: 'todos', label: 'Todos os Produtos' }, ...options];
+    }
+    
+    const lowercasedSearch = searchValue.toLowerCase();
+
+    const filtered = options.filter(({ label }) =>
+      label.toLowerCase().includes(lowercasedSearch)
+    );
+
+    // Prioritize exact code match
+    filtered.sort((a, b) => {
+        const aIsExact = a.value === searchValue;
+        const bIsExact = b.value === searchValue;
+        if (aIsExact && !bIsExact) return -1;
+        if (!aIsExact && bIsExact) return 1;
+        return a.label.localeCompare(b.label);
+    });
+
+    return [{ value: 'todos', label: 'Todos os Produtos' }, ...filtered];
+  }, [searchValue]);
+
+  const canDeleteRecords = useMemo(() => {
+    if (!userProfile) return false;
+    return userProfile.role === 'admin' || (userProfile.permissions && userProfile.permissions.includes('delete_records'));
+  }, [userProfile]);
 
   const exportarPDF = () => {
     if (registros.length === 0) {
@@ -589,8 +589,8 @@ export default function VisualizarPage() {
                                                 <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
                                                 <AlertDialogDescription>
                                                   Essa ação não pode ser desfeita. Isso excluirá permanentemente este registro.
-                                                </AlertDialogDescription>
-                                              </Header>
+                                                </d'escription>
+                                              </AlertDialogHeader>
                                               <AlertDialogFooter>
                                                 <AlertDialogCancel>Cancelar</AlertDialogCancel>
                                                 <AlertDialogAction
@@ -616,3 +616,5 @@ export default function VisualizarPage() {
     </div>
   );
 }
+
+    
