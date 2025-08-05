@@ -34,36 +34,42 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setLoading(true);
+      setLoading(true); // Always start loading when auth state might change
       if (user) {
         setUser(user);
         const userDocRef = doc(db, 'users', user.uid);
-        const userDoc = await getDoc(userDocRef);
+        try {
+            const userDoc = await getDoc(userDocRef);
 
-        if (userDoc.exists()) {
-          setUserProfile({ id: userDoc.id, ...userDoc.data() } as UserProfile);
-        } else {
-            // Handle case where user is authenticated but has no profile doc
-            // For example, if it's the special admin user during first login
-            if (user.email === 'cq.uia@ind.com.br') {
-                 const adminProfile: UserProfile = { 
-                    nome: 'Admin UIA',
-                    email: 'cq.uia@ind.com.br',
-                    matricula: 'admin', 
-                    role: 'admin', 
-                    permissions: ['/', '/registrar', '/visualizar', '/graficos', '/usuarios', '/configuracoes', 'delete_records'] 
-                };
-                await setDoc(userDocRef, adminProfile, { merge: true });
-                setUserProfile({ id: user.uid, ...adminProfile });
+            if (userDoc.exists()) {
+              setUserProfile({ id: userDoc.id, ...userDoc.data() } as UserProfile);
             } else {
-              // Regular user with no profile, log them out or show an error
-              setUserProfile(null);
+                // This handles the special admin user on first login.
+                if (user.email === 'cq.uia@ind.com.br') {
+                     const adminProfile: UserProfile = { 
+                        nome: 'Admin UIA',
+                        email: 'cq.uia@ind.com.br',
+                        matricula: 'admin', 
+                        role: 'admin', 
+                        permissions: ['/', '/registrar', '/visualizar', '/graficos', '/usuarios', '/configuracoes', 'delete_records'] 
+                    };
+                    await setDoc(userDocRef, adminProfile, { merge: true });
+                    setUserProfile({ id: user.uid, ...adminProfile });
+                } else {
+                  // A regular user is authenticated but has no profile document.
+                  // This is an invalid state, so we treat them as not logged in.
+                  setUserProfile(null);
+                }
             }
+        } catch (error) {
+            console.error("Error fetching user profile:", error);
+            setUserProfile(null); // Ensure we don't get stuck in a bad state
         }
       } else {
         setUser(null);
         setUserProfile(null);
       }
+      // CRITICAL: Set loading to false only after all async operations are complete.
       setLoading(false);
     });
 
