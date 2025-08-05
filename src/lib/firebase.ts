@@ -3,7 +3,6 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
-import { getAnalytics } from "firebase/analytics";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -21,15 +20,5 @@ const firebaseConfig = {
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
 const db = getFirestore(app);
-
-// Initialize Analytics if running in the browser
-if (typeof window !== 'undefined') {
-  try {
-    getAnalytics(app);
-  } catch (error) {
-    console.log("Firebase Analytics not available in this environment.");
-  }
-}
-
 
 export { app, auth, db };
