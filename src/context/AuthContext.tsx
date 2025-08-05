@@ -34,9 +34,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      // Start loading when auth state changes
-      setLoading(true); 
-      
+      setLoading(true);
       if (firebaseUser) {
         setUser(firebaseUser);
         const userDocRef = doc(db, 'users', firebaseUser.uid);
@@ -57,7 +55,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               await setDoc(userDocRef, adminProfile, { merge: true });
               setUserProfile({ id: firebaseUser.uid, ...adminProfile });
             } else {
-              // A regular user that exists in Auth but not in Firestore DB
               setUserProfile(null); 
             }
           }
@@ -66,16 +63,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setUserProfile(null);
         }
       } else {
-        // User is signed out
         setUser(null);
         setUserProfile(null);
       }
-      
-      // IMPORTANT: Set loading to false only after all async operations are done
       setLoading(false);
     });
 
-    // Cleanup subscription on unmount
     return () => unsubscribe();
   }, []);
 

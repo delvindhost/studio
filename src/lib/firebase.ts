@@ -6,13 +6,13 @@ import { getAnalytics } from "firebase/analytics";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_AUTH_DOMAIN",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_STORAGE_BUCKET",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID",
-  measurementId: "YOUR_MEASUREMENT_ID"
+  apiKey: "AIzaSyAhDyVaRlMyxIwSAIMcsB15zLKKJYdTvt0",
+  authDomain: "controle-q.firebaseapp.com",
+  projectId: "controle-q",
+  storageBucket: "controle-q.appspot.com",
+  messagingSenderId: "611076568023",
+  appId: "1:611076568023:web:1673b0fc82d1f42584d192",
+  measurementId: "G-52K5PJ8WE3"
 };
 
 
