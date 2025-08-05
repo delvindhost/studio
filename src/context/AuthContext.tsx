@@ -7,6 +7,7 @@ import { auth, db } from '@/lib/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 export interface UserProfile {
+  id?: string;
   nome: string;
   email: string;
   matricula: string;
@@ -39,35 +40,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const userDocRef = doc(db, 'users', user.uid);
         const userDoc = await getDoc(userDocRef);
 
-        const isKnownAdminEmail = user.email === 'cq.uia@ind.com.br';
-
-        const setupSession = (profile: UserProfile) => {
-            setUserProfile(profile);
-            localStorage.setItem('loginTimestamp', Date.now().toString());
-            localStorage.setItem('userRole', profile.role);
-        }
-
-        if (isKnownAdminEmail && !userDoc.exists()) {
-            const adminProfile: UserProfile = { 
-                nome: 'Admin UIA',
-                email: 'cq.uia@ind.com.br',
-                matricula: 'admin', 
-                role: 'admin', 
-                permissions: ['/', '/registrar', '/visualizar', '/graficos', '/usuarios', '/configuracoes', 'delete_records'] 
-            };
-            await setDoc(userDocRef, adminProfile, { merge: true });
-            setupSession(adminProfile);
-        } else if (userDoc.exists()) {
-            const profile = userDoc.data() as UserProfile;
-            setupSession(profile);
+        if (userDoc.exists()) {
+          setUserProfile({ id: userDoc.id, ...userDoc.data() } as UserProfile);
         } else {
-            setUserProfile(null);
+            // Handle case where user is authenticated but has no profile doc
+            // For example, if it's the special admin user during first login
+            if (user.email === 'cq.uia@ind.com.br') {
+                 const adminProfile: UserProfile = { 
+                    nome: 'Admin UIA',
+                    email: 'cq.uia@ind.com.br',
+                    matricula: 'admin', 
+                    role: 'admin', 
+                    permissions: ['/', '/registrar', '/visualizar', '/graficos', '/usuarios', '/configuracoes', 'delete_records'] 
+                };
+                await setDoc(userDocRef, adminProfile, { merge: true });
+                setUserProfile({ id: user.uid, ...adminProfile });
+            } else {
+              // Regular user with no profile, log them out or show an error
+              setUserProfile(null);
+            }
         }
       } else {
         setUser(null);
         setUserProfile(null);
-        localStorage.removeItem('loginTimestamp');
-        localStorage.removeItem('userRole');
       }
       setLoading(false);
     });

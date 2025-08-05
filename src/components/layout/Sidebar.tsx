@@ -47,17 +47,21 @@ export default function Sidebar({ isSidebarOpen, setSidebarOpen }: SidebarProps)
   };
 
   const hasPermission = (item: typeof navItems[0]) => {
+    // Return false if userProfile is not loaded yet to prevent rendering errors
     if (!userProfile) return false;
+
     if (userProfile.role === 'admin') return true;
     if (item.admin) return false;
     
-    // CORREÇÃO: Garante que a permissão para o Dashboard ('/') seja verificada explicitamente.
+    // Ensure permissions array exists before checking
+    if (!userProfile.permissions) return false;
+
+    // Explicitly check for dashboard permission
     if (item.href === '/') {
-        return userProfile.permissions && userProfile.permissions.includes('/');
+        return userProfile.permissions.includes('/');
     }
 
-    // Mantém a verificação para as outras páginas.
-    return userProfile.permissions && userProfile.permissions.includes(item.href);
+    return userProfile.permissions.includes(item.href);
   }
 
   return (
