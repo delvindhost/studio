@@ -590,7 +590,7 @@ export default function VisualizarPage() {
                                                 <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
                                                 <AlertDialogDescription>
                                                   Essa ação não pode ser desfeita. Isso excluirá permanentemente este registro.
-                                                </d'escription>
+                                                </AlertDialogDescription>
                                               </AlertDialogHeader>
                                               <AlertDialogFooter>
                                                 <AlertDialogCancel>Cancelar</AlertDialogCancel>
@@ -600,7 +600,7 @@ export default function VisualizarPage() {
                                                 >
                                                   Sim, excluir
                                                 </AlertDialogAction>
-                                              </Footer>
+                                              </AlertDialogFooter>
                                             </AlertDialogContent>
                                           </AlertDialog>
                                       </TableCell>

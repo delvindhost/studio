@@ -23,7 +23,8 @@ export default function AppLayout({
     }
   }, [userProfile, loading, router]);
 
-  // If loading, show a full-screen loader
+  // While the auth state is loading, show a full-screen loader.
+  // This is the source of the infinite spinner if the loading state is never resolved.
   if (loading) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
@@ -32,7 +33,8 @@ export default function AppLayout({
     );
   }
 
-  // If loading is finished and we have a user profile, render the app
+  // If loading is finished and we have a user profile, render the app.
+  // This part is only reached if loading is false and a user profile exists.
   if (userProfile) {
     return (
       <div className="flex min-h-screen w-full bg-background">
@@ -47,8 +49,8 @@ export default function AppLayout({
     );
   }
 
-  // If loading is finished and there's no user profile, the useEffect above will handle the redirect.
-  // We can return a loader here as well to avoid a flash of content before redirect.
+  // If loading is finished and there's no user (the useEffect above will handle the redirect),
+  // return a loader to avoid a flash of content before the redirect happens.
   return (
     <div className="flex h-screen w-full items-center justify-center bg-background">
       <Loader2 className="h-8 w-8 animate-spin text-primary" />

@@ -34,6 +34,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      setLoading(true);
       if (firebaseUser) {
         setUser(firebaseUser);
         const userDocRef = doc(db, 'users', firebaseUser.uid);
@@ -42,7 +43,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           if (userDoc.exists()) {
             setUserProfile({ id: userDoc.id, ...userDoc.data() } as UserProfile);
           } else {
-            if (firebaseUser.email === 'cq.uia@ind.com.br') {
+             if (firebaseUser.email === 'cq.uia@ind.com.br') {
               const adminProfile: UserProfile = {
                 nome: 'Admin UIA',
                 email: 'cq.uia@ind.com.br',
@@ -53,6 +54,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               await setDoc(userDocRef, adminProfile, { merge: true });
               setUserProfile({ id: firebaseUser.uid, ...adminProfile });
             } else {
+              // User is authenticated in Firebase Auth, but no profile in Firestore
               setUserProfile(null); 
             }
           }
@@ -61,12 +63,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setUserProfile(null);
         }
       } else {
+        // No user is signed in
         setUser(null);
         setUserProfile(null);
       }
+       // Ensure loading is set to false after all async operations are done
       setLoading(false);
     });
 
+    // Cleanup subscription on unmount
     return () => unsubscribe();
   }, []);
 
