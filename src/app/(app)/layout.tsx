@@ -18,16 +18,15 @@ export default function AppLayout({
   useEffect(() => {
     // A condição !loading garante que só vamos verificar o usuário
     // depois que o onAuthStateChanged do Firebase terminar a verificação inicial.
-    // A condição !user garante que estamos lidando com um usuário não logado.
-    if (!loading && !user) {
+    // Se, após o carregamento, não houver usuário ou perfil, redireciona.
+    if (!loading && (!user || !userProfile)) {
       router.replace("/login");
     }
-  }, [user, loading, router]);
+  }, [user, userProfile, loading, router]);
 
-  // Enquanto o estado de autenticação estiver carregando,
-  // ou se não houver usuário (e o redirecionamento ainda não aconteceu),
-  // exibe uma tela de carregamento.
-  if (loading || !user) {
+  // Exibe a tela de carregamento enquanto a verificação de autenticação
+  // e o carregamento do perfil estiverem em andamento.
+  if (loading) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -35,28 +34,27 @@ export default function AppLayout({
     );
   }
 
-  // Se o usuário estiver logado, mas o perfil ainda não carregou, 
-  // pode-se manter o loading para evitar renderização parcial.
-  if (!userProfile) {
-     return (
-      <div className="flex h-screen w-full items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="ml-4">Carregando perfil...</p>
+  // Se o usuário está logado e o perfil foi carregado, renderiza o layout.
+  // A verificação no useEffect cuida do redirecionamento se algo estiver faltando.
+  if (user && userProfile) {
+    return (
+      <div className="flex min-h-screen w-full bg-background">
+        <Sidebar isSidebarOpen={isSidebarOpen} setSidebarOpen={setSidebarOpen} />
+        <div className="flex flex-1 flex-col md:ml-64">
+          <Header setSidebarOpen={setSidebarOpen} userProfile={userProfile} />
+          <main className="flex-1 p-4 sm:p-6 md:p-8 overflow-y-auto">
+              {children}
+          </main>
+        </div>
       </div>
     );
   }
 
-  // Se passou por todas as verificações, o usuário está logado e tem perfil.
-  // Renderiza o layout principal do aplicativo.
+  // Fallback para o caso de o redirecionamento ainda não ter acontecido.
+  // Isso também mostra a tela de carregamento.
   return (
-    <div className="flex min-h-screen w-full bg-background">
-      <Sidebar isSidebarOpen={isSidebarOpen} setSidebarOpen={setSidebarOpen} />
-      <div className="flex flex-1 flex-col md:ml-64">
-        <Header setSidebarOpen={setSidebarOpen} userProfile={userProfile} />
-        <main className="flex-1 p-4 sm:p-6 md:p-8 overflow-y-auto">
-            {children}
-        </main>
-      </div>
+    <div className="flex h-screen w-full items-center justify-center bg-background">
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
     </div>
   );
 }
