@@ -34,7 +34,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      setLoading(true);
       if (firebaseUser) {
         setUser(firebaseUser);
         const userDocRef = doc(db, 'users', firebaseUser.uid);
@@ -43,7 +42,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           if (userDoc.exists()) {
             setUserProfile({ id: userDoc.id, ...userDoc.data() } as UserProfile);
           } else {
-            // Special case for the first-time admin user
             if (firebaseUser.email === 'cq.uia@ind.com.br') {
               const adminProfile: UserProfile = {
                 nome: 'Admin UIA',
