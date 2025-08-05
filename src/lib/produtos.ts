@@ -830,5 +830,3 @@ export const produtosPorCodigo: { [key: string]: { produto: string; tipo: string
 "313505": { produto: "SHAWARMA BOLSAO 15KG LG", tipo: "" },
 "119714" : { produto: "CCFEX-COXINHA ASA INTERF 15KG MEX", tipo: "" }
 };
-
-    

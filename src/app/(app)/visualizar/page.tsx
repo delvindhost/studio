@@ -590,7 +590,7 @@ export default function VisualizarPage() {
                                                 <AlertDialogDescription>
                                                   Essa ação não pode ser desfeita. Isso excluirá permanentemente este registro.
                                                 </AlertDialogDescription>
-                                              </AlertDialogHeader>
+                                              </Header>
                                               <AlertDialogFooter>
                                                 <AlertDialogCancel>Cancelar</AlertDialogCancel>
                                                 <AlertDialogAction
