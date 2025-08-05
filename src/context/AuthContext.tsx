@@ -33,16 +33,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        setUser(user);
-        const userDocRef = doc(db, 'users', user.uid);
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      // Start loading when auth state changes
+      setLoading(true); 
+      
+      if (firebaseUser) {
+        setUser(firebaseUser);
+        const userDocRef = doc(db, 'users', firebaseUser.uid);
         try {
           const userDoc = await getDoc(userDocRef);
           if (userDoc.exists()) {
             setUserProfile({ id: userDoc.id, ...userDoc.data() } as UserProfile);
           } else {
-            if (user.email === 'cq.uia@ind.com.br') {
+            // Special case for the first-time admin user
+            if (firebaseUser.email === 'cq.uia@ind.com.br') {
               const adminProfile: UserProfile = {
                 nome: 'Admin UIA',
                 email: 'cq.uia@ind.com.br',
@@ -51,9 +55,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 permissions: ['/', '/registrar', '/visualizar', '/graficos', '/usuarios', '/configuracoes', 'delete_records']
               };
               await setDoc(userDocRef, adminProfile, { merge: true });
-              setUserProfile({ id: user.uid, ...adminProfile });
+              setUserProfile({ id: firebaseUser.uid, ...adminProfile });
             } else {
-              setUserProfile(null);
+              // A regular user that exists in Auth but not in Firestore DB
+              setUserProfile(null); 
             }
           }
         } catch (error) {
@@ -61,12 +66,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setUserProfile(null);
         }
       } else {
+        // User is signed out
         setUser(null);
         setUserProfile(null);
       }
+      
+      // IMPORTANT: Set loading to false only after all async operations are done
       setLoading(false);
     });
 
+    // Cleanup subscription on unmount
     return () => unsubscribe();
   }, []);
 

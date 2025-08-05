@@ -1,6 +1,6 @@
 
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 import { useAuth } from "@/context/AuthContext";
@@ -14,14 +14,16 @@ export default function AppLayout({
 }) {
   const { userProfile, loading } = useAuth();
   const router = useRouter();
-  const [isSidebarOpen, setSidebarOpen] = useState(false);
+  const [isSidebarOpen, setSidebarOpen] = React.useState(false);
 
   useEffect(() => {
+    // Wait until loading is complete before checking for user profile
     if (!loading && !userProfile) {
       router.replace("/login");
     }
   }, [userProfile, loading, router]);
 
+  // If loading, show a full-screen loader
   if (loading) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
@@ -30,6 +32,7 @@ export default function AppLayout({
     );
   }
 
+  // If loading is finished and we have a user profile, render the app
   if (userProfile) {
     return (
       <div className="flex min-h-screen w-full bg-background">
@@ -44,6 +47,8 @@ export default function AppLayout({
     );
   }
 
+  // If loading is finished and there's no user profile, the useEffect above will handle the redirect.
+  // We can return a loader here as well to avoid a flash of content before redirect.
   return (
     <div className="flex h-screen w-full items-center justify-center bg-background">
       <Loader2 className="h-8 w-8 animate-spin text-primary" />
