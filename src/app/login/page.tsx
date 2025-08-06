@@ -1,7 +1,8 @@
+
 'use client';
 
 import { useState } from 'react';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
@@ -37,20 +38,32 @@ export default function LoginPage() {
 
     try {
       const loginInput = matricula.trim();
-      // Se o usuário digitar a matrícula, o sistema adiciona o domínio.
-      // Se digitar o e-mail completo, usa o que foi digitado.
-      const emailToLogin = loginInput.includes('@') ? loginInput : `${loginInput}@ind.com.br`;
+      const isAdminLogin = loginInput.toLowerCase() === 'admin';
+      const emailToLogin = isAdminLogin ? 'cq.uia@ind.com.br' : (loginInput.includes('@') ? loginInput : `${loginInput}@ind.com.br`);
       
       await signInWithEmailAndPassword(auth, emailToLogin, password);
       router.push('/');
 
     } catch (err: any) {
-      if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-email') {
+      // Se for o login de admin e o usuário não existir, crie-o.
+      const isAdminLogin = matricula.trim().toLowerCase() === 'admin';
+      if (isAdminLogin && err.code === 'auth/user-not-found') {
+        try {
+          // Cria o usuário admin com a senha digitada
+          await createUserWithEmailAndPassword(auth, 'cq.uia@ind.com.br', password);
+          // Tenta logar novamente
+          await signInWithEmailAndPassword(auth, 'cq.uia@ind.com.br', password);
+          router.push('/');
+        } catch (creationError: any) {
+          setError('Falha ao criar usuário admin. Senha deve ter 6+ caracteres.');
+          console.error("Admin creation error:", creationError);
+        }
+      } else if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-email') {
         setError('Falha no login. Verifique suas credenciais.');
       } else {
         setError('Ocorreu um erro inesperado. Tente novamente.');
+        console.error(err);
       }
-      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -72,7 +85,7 @@ export default function LoginPage() {
               <Input
                 id="matricula"
                 type="text"
-                placeholder="Sua matrícula ou e-mail"
+                placeholder="Sua matrícula ou 'admin'"
                 required
                 value={matricula}
                 onChange={(e) => setMatricula(e.target.value)}
