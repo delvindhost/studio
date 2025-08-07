@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid } from 'recharts';
-import { Loader2, Filter, FileText, Users, Award, LineChart as LineChartIcon, Percent } from 'lucide-react';
+import { Loader2, Filter, FileText, Users, Award, LineChart as LineChartIcon } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import jsPDF from 'jspdf';
@@ -304,72 +304,76 @@ export default function DesempenhoPage() {
                 </Card>
             </div>
             
-            {/* Gráficos e Tabelas */}
-            <div className="grid gap-6 lg:grid-cols-5">
-                <Card className="lg:col-span-3">
-                   <CardHeader>
-                       <CardTitle>Análise Comparativa por Turno</CardTitle>
-                       <CardDescription>Desempenho geral de cada turno no período.</CardDescription>
-                   </CardHeader>
-                   <CardContent className='h-[350px]'>
-                       <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={desempenhoData.porTurno}>
-                              <CartesianGrid strokeDasharray="3 3" />
-                              <XAxis dataKey="name" />
-                              <YAxis />
-                              <Tooltip />
-                              <Legend />
-                              <Bar dataKey="Total de Registros" fill="#4B0082" />
-                              <Bar dataKey="Média por Usuário" fill="#8A2BE2" />
-                          </BarChart>
-                      </ResponsiveContainer>
-                   </CardContent>
-                </Card>
-                
-                 <Card className="lg:col-span-2">
-                   <CardHeader>
-                       <CardTitle>Ranking de Colaboradores</CardTitle>
-                       <CardDescription>Top 10 usuários com mais registros.</CardDescription>
-                   </CardHeader>
-                   <CardContent>
-                       <Table>
-                           <TableHeader>
-                               <TableRow>
-                                   <TableHead>Colaborador</TableHead>
-                                   <TableHead>Turno</TableHead>
-                                   <TableHead className="text-right">Registros</TableHead>
-                               </TableRow>
-                           </TableHeader>
-                           <TableBody>
-                               {desempenhoData.ranking.slice(0, 10).map(u => (
-                                   <TableRow key={u.userId}>
-                                       <TableCell className="font-medium">{u.nome}</TableCell>
-                                       <TableCell>{u.turno}</TableCell>
-                                       <TableCell className="text-right font-bold">{u.registros}</TableCell>
+            <div className="space-y-6">
+                {/* Gráficos e Tabelas */}
+                <div className="grid gap-6 lg:grid-cols-5">
+                    <Card className="lg:col-span-3">
+                       <CardHeader>
+                           <CardTitle>Análise Comparativa por Turno</CardTitle>
+                           <CardDescription>Desempenho geral de cada turno no período.</CardDescription>
+                       </CardHeader>
+                       <CardContent className='h-[350px]'>
+                           <ResponsiveContainer width="100%" height="100%">
+                              <BarChart data={desempenhoData.porTurno}>
+                                  <CartesianGrid strokeDasharray="3 3" />
+                                  <XAxis dataKey="name" />
+                                  <YAxis />
+                                  <Tooltip />
+                                  <Legend />
+                                  <Bar dataKey="Total de Registros" fill="#4B0082" />
+                                  <Bar dataKey="Média por Usuário" fill="#8A2BE2" />
+                              </BarChart>
+                          </ResponsiveContainer>
+                       </CardContent>
+                    </Card>
+                    
+                     <Card className="lg:col-span-2">
+                       <CardHeader>
+                           <CardTitle>Ranking de Colaboradores</CardTitle>
+                           <CardDescription>Top 10 usuários com mais registros.</CardDescription>
+                       </CardHeader>
+                       <CardContent>
+                           <Table>
+                               <TableHeader>
+                                   <TableRow>
+                                       <TableHead>Colaborador</TableHead>
+                                       <TableHead>Turno</TableHead>
+                                       <TableHead className="text-right">Registros</TableHead>
                                    </TableRow>
-                               ))}
-                           </TableBody>
-                       </Table>
-                   </CardContent>
+                               </TableHeader>
+                               <TableBody>
+                                   {desempenhoData.ranking.slice(0, 10).map(u => (
+                                       <TableRow key={u.userId}>
+                                           <TableCell className="font-medium">{u.nome}</TableCell>
+                                           <TableCell>{u.turno}</TableCell>
+                                           <TableCell className="text-right font-bold">{u.registros}</TableCell>
+                                       </TableRow>
+                                   ))}
+                               </TableBody>
+                           </Table>
+                       </CardContent>
+                    </Card>
+                </div>
+                 <Card>
+                  <CardHeader>
+                      <CardTitle>Usuários Ativos por Turno</CardTitle>
+                      <CardDescription>Comparativo de colaboradores que realizaram registros no período.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                      {desempenhoData.porTurno.length > 0 ? desempenhoData.porTurno.map(turno => (
+                          <div key={turno.name}>
+                              <div className='flex justify-between mb-1'>
+                                <Label>{turno.name}</Label>
+                                <span className="text-sm text-muted-foreground">{turno['Usuários Ativos']} usuário(s) ativo(s)</span>
+                              </div>
+                              <Progress value={(turno['Usuários Ativos'] / maxUsuariosAtivos) * 100} className="w-full" />
+                          </div>
+                      )) : (
+                        <p className="text-sm text-muted-foreground text-center py-4">Não há dados de atividade para exibir.</p>
+                      )}
+                  </CardContent>
                 </Card>
             </div>
-             <Card>
-              <CardHeader>
-                  <CardTitle>Usuários Ativos por Turno</CardTitle>
-                  <CardDescription>Comparativo de colaboradores que realizaram registros no período.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                  {desempenhoData.porTurno.map(turno => (
-                      <div key={turno.name}>
-                          <div className='flex justify-between mb-1'>
-                            <Label>{turno.name}</Label>
-                            <span className="text-sm text-muted-foreground">{turno['Usuários Ativos']} usuário(s) ativo(s)</span>
-                          </div>
-                          <Progress value={(turno['Usuários Ativos'] / maxUsuariosAtivos) * 100} className="w-full" />
-                      </div>
-                  ))}
-              </CardContent>
-            </Card>
         </div>
       )}
     </div>
