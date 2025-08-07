@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,10 +20,10 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/dialog';
 import { useAuth } from '@/context/AuthContext';
-import { Loader2, Save, Trash2, ShieldAlert } from 'lucide-react';
+import { Loader2, Save, Trash2, ShieldAlert, User, Database } from 'lucide-react';
 import { updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
 import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, Timestamp, writeBatch, doc } from 'firebase/firestore';
+import { collection, query, where, getDocs, Timestamp, writeBatch } from 'firebase/firestore';
 
 
 export default function ConfiguracoesPage() {
@@ -168,7 +169,6 @@ export default function ConfiguracoesPage() {
     }
   }
 
-
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-primary">Configurações</h1>
@@ -176,139 +176,159 @@ export default function ConfiguracoesPage() {
       {success && <div className="p-4 bg-green-100 text-green-800 border border-green-300 rounded-md">{success}</div>}
       {error && <div className="p-4 bg-red-100 text-red-800 border border-red-300 rounded-md">{error}</div>}
 
-      {userProfile?.role === 'admin' ? (
-        <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>Alterar Senha de Administrador</CardTitle>
-                <CardDescription>
-                  Altere a senha da sua conta de administrador. Por segurança, você precisará informar sua senha atual.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    handleChangePassword();
-                  }}
-                  className="space-y-6"
-                >
-                  <div className="space-y-2">
-                    <Label htmlFor="current-password">Senha Atual</Label>
-                    <Input id="current-password" type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} required disabled={loading} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="new-password">Nova Senha</Label>
-                    <Input id="new-password" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required disabled={loading}/>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="confirm-password">Confirmar Nova Senha</Label>
-                    <Input id="confirm-password" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required disabled={loading} />
-                  </div>
-                  <Button type="submit" disabled={loading}>
-                    {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                    Salvar Nova Senha
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
-            
-            <Card>
-                <CardHeader>
-                    <CardTitle>Manutenção de Dados</CardTitle>
-                    <CardDescription>
-                       Gerencie os dados de registros para manter o sistema otimizado.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-8">
-                    <div className="space-y-4 p-4 border rounded-lg">
-                        <Label className='text-md font-semibold'>Limpeza de Dados Antigos</Label>
-                        <p className='text-sm text-muted-foreground'>
-                            Exclua todos os registros de temperatura mais antigos que o período selecionado. Esta ação não pode ser desfeita.
-                        </p>
-                        <div className="flex items-center gap-4">
-                            <Select value={retentionDays} onValueChange={setRetentionDays} disabled={loading}>
-                                <SelectTrigger className="w-[180px]">
-                                    <SelectValue placeholder="Selecione" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="30">Manter últimos 30 dias</SelectItem>
-                                    <SelectItem value="60">Manter últimos 60 dias</SelectItem>
-                                    <SelectItem value="90">Manter últimos 90 dias</SelectItem>
-                                    <SelectItem value="180">Manter últimos 180 dias</SelectItem>
-                                    <SelectItem value="365">Manter último 1 ano</SelectItem>
-                                </SelectContent>
-                            </Select>
+       <Tabs defaultValue="conta" className="w-full">
+        <TabsList className="grid w-full grid-cols-2 max-w-md">
+            <TabsTrigger value="conta" disabled={userProfile?.role !== 'admin'}>
+                <User className="mr-2 h-4 w-4" /> Conta
+            </TabsTrigger>
+            <TabsTrigger value="dados" disabled={userProfile?.role !== 'admin'}>
+                <Database className="mr-2 h-4 w-4" /> Dados
+            </TabsTrigger>
+        </TabsList>
+        <TabsContent value="conta">
+            {userProfile?.role === 'admin' ? (
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>Alterar Senha de Administrador</CardTitle>
+                        <CardDescription>
+                        Altere a senha da sua conta de administrador. Por segurança, você precisará informar sua senha atual.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <form
+                        onSubmit={(e) => {
+                            e.preventDefault();
+                            handleChangePassword();
+                        }}
+                        className="space-y-6 max-w-lg"
+                        >
+                        <div className="space-y-2">
+                            <Label htmlFor="current-password">Senha Atual</Label>
+                            <Input id="current-password" type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} required disabled={loading} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="new-password">Nova Senha</Label>
+                            <Input id="new-password" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required disabled={loading}/>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="confirm-password">Confirmar Nova Senha</Label>
+                            <Input id="confirm-password" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required disabled={loading} />
+                        </div>
+                        <Button type="submit" disabled={loading}>
+                            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                            Salvar Nova Senha
+                        </Button>
+                        </form>
+                    </CardContent>
+                </Card>
+            ) : (
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Configurações de Conta</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-muted-foreground">No momento, não há configurações disponíveis para o seu nível de acesso. Para alterar sua senha, entre em contato com um administrador.</p>
+                    </CardContent>
+                </Card>
+            )}
+        </TabsContent>
+        <TabsContent value="dados">
+             {userProfile?.role === 'admin' ? (
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Manutenção de Dados</CardTitle>
+                        <CardDescription>
+                        Gerencie os dados de registros para manter o sistema otimizado.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-8">
+                        <div className="space-y-4 p-4 border rounded-lg">
+                            <Label className='text-md font-semibold'>Limpeza de Dados Antigos</Label>
+                            <p className='text-sm text-muted-foreground'>
+                                Exclua todos os registros de temperatura mais antigos que o período selecionado. Esta ação não pode ser desfeita.
+                            </p>
+                            <div className="flex items-center gap-4">
+                                <Select value={retentionDays} onValueChange={setRetentionDays} disabled={loading}>
+                                    <SelectTrigger className="w-[220px]">
+                                        <SelectValue placeholder="Selecione" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="30">Manter últimos 30 dias</SelectItem>
+                                        <SelectItem value="60">Manter últimos 60 dias</SelectItem>
+                                        <SelectItem value="90">Manter últimos 90 dias</SelectItem>
+                                        <SelectItem value="180">Manter últimos 180 dias</SelectItem>
+                                        <SelectItem value="365">Manter último 1 ano</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button variant="outline" disabled={loading}>
+                                            <Trash2 className="mr-2 h-4 w-4" /> Limpar Dados
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                        <AlertDialogTitle>Você tem certeza absoluta?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            Esta ação é irreversível. Todos os registros com mais de {retentionDays} dias serão permanentemente excluídos.
+                                        </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                        <AlertDialogCancel disabled={loading}>Cancelar</AlertDialogCancel>
+                                        <AlertDialogAction onClick={handleCleanOldData} disabled={loading}>
+                                            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Sim, excluir'}
+                                        </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            </div>
+                        </div>
+
+                        <div className="space-y-4 p-4 border border-destructive/50 rounded-lg">
+                            <Label className='text-md font-semibold text-destructive flex items-center gap-2'><ShieldAlert className='h-5 w-5' />Reset Completo do Sistema</Label>
+                            <p className='text-sm text-muted-foreground'>
+                                Exclua **todos** os registros de temperatura do sistema. Use com extrema cautela.
+                            </p>
                             <AlertDialog>
                                 <AlertDialogTrigger asChild>
-                                    <Button variant="outline" disabled={loading}>
-                                        <Trash2 className="mr-2 h-4 w-4" /> Limpar Dados
+                                    <Button variant="destructive" disabled={loading}>
+                                        <Trash2 className="mr-2 h-4 w-4" /> Resetar Sistema
                                     </Button>
                                 </AlertDialogTrigger>
                                 <AlertDialogContent>
                                     <AlertDialogHeader>
-                                    <AlertDialogTitle>Você tem certeza absoluta?</AlertDialogTitle>
+                                    <AlertDialogTitle>Atenção! Ação Perigosa!</AlertDialogTitle>
                                     <AlertDialogDescription>
-                                        Esta ação é irreversível. Todos os registros com mais de {retentionDays} dias serão permanentemente excluídos.
+                                    Você está prestes a apagar **TODA** a base de dados de registros. Esta ação não pode ser desfeita e todos os dados serão perdidos. Deseja continuar?
                                     </AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
                                     <AlertDialogCancel disabled={loading}>Cancelar</AlertDialogCancel>
-                                    <AlertDialogAction onClick={handleCleanOldData} disabled={loading}>
-                                        {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Sim, excluir'}
+                                    <AlertDialogAction
+                                        onClick={handleResetSystem}
+                                        className='bg-destructive hover:bg-destructive/90'
+                                        disabled={loading}
+                                    >
+                                        {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Sim, eu entendo, resetar tudo'}
                                     </AlertDialogAction>
                                     </AlertDialogFooter>
                                 </AlertDialogContent>
                             </AlertDialog>
                         </div>
-                    </div>
-
-                     <div className="space-y-4 p-4 border border-destructive/50 rounded-lg">
-                        <Label className='text-md font-semibold text-destructive flex items-center gap-2'><ShieldAlert className='h-5 w-5' />Reset Completo do Sistema</Label>
-                         <p className='text-sm text-muted-foreground'>
-                            Exclua **todos** os registros de temperatura do sistema. Use com extrema cautela.
-                        </p>
-                         <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                                <Button variant="destructive" disabled={loading}>
-                                    <Trash2 className="mr-2 h-4 w-4" /> Resetar Sistema
-                                </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                                <AlertDialogHeader>
-                                <AlertDialogTitle>Atenção! Ação Perigosa!</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                   Você está prestes a apagar **TODA** a base de dados de registros. Esta ação não pode ser desfeita e todos os dados serão perdidos. Deseja continuar?
-                                </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                <AlertDialogCancel disabled={loading}>Cancelar</AlertDialogCancel>
-                                <AlertDialogAction
-                                    onClick={handleResetSystem}
-                                    className='bg-destructive hover:bg-destructive/90'
-                                    disabled={loading}
-                                >
-                                    {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Sim, eu entendo, resetar tudo'}
-                                </AlertDialogAction>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                        </AlertDialog>
-                    </div>
-                </CardContent>
-            </Card>
-
-        </div>
-      ) : (
-         <Card className="max-w-2xl">
-            <CardHeader>
-                <CardTitle>Configurações Gerais</CardTitle>
-            </CardHeader>
-            <CardContent>
-                <p className="text-muted-foreground">No momento, não há configurações disponíveis para o seu nível de acesso. Para alterar sua senha, entre em contato com um administrador.</p>
-            </CardContent>
-        </Card>
-      )}
+                    </CardContent>
+                </Card>
+              ) : (
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Configurações de Dados</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-muted-foreground">Acesso negado. Apenas administradores podem gerenciar os dados do sistema.</p>
+                    </CardContent>
+                </Card>
+              )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
-
