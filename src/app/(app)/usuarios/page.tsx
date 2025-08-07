@@ -1,6 +1,7 @@
+
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { collection, getDocs, doc, setDoc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { db, auth as mainAuth } from '@/lib/firebase';
@@ -8,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Dialog,
   DialogContent,
@@ -35,7 +37,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, UserPlus, Users, ShieldCheck, KeyRound, User, Trash2, MoreVertical, Edit, Mail } from 'lucide-react';
+import { Loader2, UserPlus, Users, ShieldCheck, KeyRound, User, Trash2, MoreVertical, Edit, Mail, Clock } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 
@@ -47,6 +49,7 @@ type UserProfile = {
   matricula: string;
   role: 'admin' | 'user';
   permissions: string[];
+  turno: '1' | '2' | '3';
 };
 
 const navItems = [
@@ -54,6 +57,7 @@ const navItems = [
   { href: "/registrar", label: "Registrar" },
   { href: "/visualizar", label: "Visualizar" },
   { href: "/graficos", label: "Gráficos" },
+  { href: "/desempenho", label: "Desempenho", admin: true },
 ];
 
 const specialPermissions = [
@@ -80,20 +84,10 @@ export default function UsuariosPage() {
   const [email, setEmail] = useState('');
   const [matricula, setMatricula] = useState('');
   const [senha, setSenha] = useState('');
+  const [turno, setTurno] = useState<'1' | '2' | '3' | ''>('');
   const [permissions, setPermissions] = useState<string[]>([]);
 
-  useEffect(() => {
-    if (!authLoading) {
-      if (userProfile?.role !== 'admin') {
-        router.replace('/');
-      } else {
-        fetchUsers();
-      }
-    }
-  }, [userProfile, authLoading, router]);
-
-
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
       const querySnapshot = await getDocs(collection(db, 'users'));
@@ -110,7 +104,18 @@ export default function UsuariosPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (!authLoading) {
+      if (userProfile?.role !== 'admin') {
+        router.replace('/');
+      } else {
+        fetchUsers();
+      }
+    }
+  }, [userProfile, authLoading, router, fetchUsers]);
+
   
   const handleMatriculaChange = (value: string) => {
       const newMatricula = value.trim();
@@ -150,6 +155,7 @@ export default function UsuariosPage() {
     setEmail('');
     setMatricula('');
     setSenha('');
+    setTurno('');
     setPermissions([]);
     setEditingUser(null);
     setIsSubmitting(false);
@@ -161,6 +167,7 @@ export default function UsuariosPage() {
     setNome(user.nome);
     setMatricula(user.matricula);
     setEmail(user.email);
+    setTurno(user.turno || '');
     setPermissions(user.permissions || []);
     setSenha(''); // Senha não é preenchida por segurança
     setIsDialogOpen(true);
@@ -172,7 +179,8 @@ export default function UsuariosPage() {
     setIsDialogOpen(true);
   }
 
-  const handleFormSubmit = async () => {
+  const handleFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (editingUser) {
       await handleUpdateUser();
     } else {
@@ -181,8 +189,8 @@ export default function UsuariosPage() {
   }
 
   const handleAddUser = async () => {
-    if (!nome || !matricula || !senha || !email) {
-      showAlert('Por favor, preencha nome, matrícula e senha.', 'error');
+    if (!nome || !matricula || !senha || !email || !turno) {
+      showAlert('Por favor, preencha nome, matrícula, senha e turno.', 'error');
       return;
     }
     setIsSubmitting(true);
@@ -198,13 +206,14 @@ export default function UsuariosPage() {
         nome,
         matricula,
         email,
+        turno,
         role: 'user',
         permissions,
       });
 
       showAlert('Usuário adicionado com sucesso!', 'success');
       resetForm();
-      fetchUsers();
+      await fetchUsers();
     } catch (err: any) {
         if (err.code === 'auth/email-already-in-use') {
             showAlert('Erro: A matrícula informada já está em uso.', 'error');
@@ -220,8 +229,8 @@ export default function UsuariosPage() {
   };
 
   const handleUpdateUser = async () => {
-     if (!editingUser || !nome || !matricula) {
-      showAlert('Por favor, preencha nome e matrícula.', 'error');
+     if (!editingUser || !nome || !matricula || !turno) {
+      showAlert('Por favor, preencha nome, matrícula e turno.', 'error');
       return;
     }
      if (senha && senha.length < 6) {
@@ -238,6 +247,7 @@ export default function UsuariosPage() {
         
         await updateDoc(userDocRef, {
             nome,
+            turno,
             permissions,
         });
 
@@ -248,7 +258,7 @@ export default function UsuariosPage() {
         
         showAlert(successMsg, 'success');
         resetForm();
-        fetchUsers();
+        await fetchUsers();
 
     } catch (err) {
         console.error(err);
@@ -260,9 +270,11 @@ export default function UsuariosPage() {
   
   const handleDeleteUser = async (userIdToDelete: string) => {
     try {
+      // Note: This only deletes the Firestore document, not the Firebase Auth user.
+      // Deleting the auth user requires a backend function for security reasons.
       await deleteDoc(doc(db, 'users', userIdToDelete));
-      showAlert('Usuário removido da base de dados! (A autenticação precisa ser removida manually no console do Firebase)', 'success');
-      fetchUsers();
+      showAlert('Usuário removido da base de dados! (A conta de autenticação precisa ser removida manualmente no console do Firebase)', 'success');
+      await fetchUsers();
     } catch (error) {
         showAlert('Erro ao remover usuário.', 'error');
         console.error("Error deleting user: ", error);
@@ -306,80 +318,97 @@ export default function UsuariosPage() {
           <DialogContent className="sm:max-w-md" onInteractOutside={(e) => {
               if (isSubmitting) e.preventDefault();
           }}>
-            <DialogHeader>
-              <DialogTitle>{editingUser ? 'Editar Usuário' : 'Novo Usuário'}</DialogTitle>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="nome">Nome Completo</Label>
-                <Input id="nome" value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Nome do colaborador" disabled={isSubmitting} />
+            <form onSubmit={handleFormSubmit}>
+              <DialogHeader>
+                <DialogTitle>{editingUser ? 'Editar Usuário' : 'Novo Usuário'}</DialogTitle>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="nome">Nome Completo</Label>
+                  <Input id="nome" value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Nome do colaborador" disabled={isSubmitting} required/>
+                </div>
+                 <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="matricula">Matrícula</Label>
+                      <Input id="matricula" value={matricula} onChange={(e) => handleMatriculaChange(e.target.value)} placeholder="0000" disabled={isSubmitting || !!editingUser} required/>
+                    </div>
+                     <div className="space-y-2">
+                        <Label htmlFor="turno">Turno</Label>
+                        <Select value={turno} onValueChange={(v) => setTurno(v as '1' | '2' | '3')} required>
+                            <SelectTrigger id="turno" disabled={isSubmitting}>
+                                <SelectValue placeholder="Selecione" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="1">1º Turno</SelectItem>
+                                <SelectItem value="2">2º Turno</SelectItem>
+                                <SelectItem value="3">3º Turno</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">E-mail de Login (automático)</Label>
+                  <Input id="email" value={email} readOnly disabled placeholder="Será gerado a partir da matrícula" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="senha">Senha</Label>
+                  <Input id="senha" type="password" value={senha} onChange={(e) => setSenha(e.target.value)} placeholder={editingUser ? "Deixe em branco para não alterar" : "Mínimo de 6 caracteres"} disabled={isSubmitting}/>
+                </div>
+                <div className="space-y-3">
+                   <Label>Permissões de Acesso às Páginas</Label>
+                   <div className='space-y-2'>
+                      {navItems.map((item) => (
+                          <div key={item.href} className="flex items-center space-x-2">
+                              <Checkbox 
+                                  id={`perm-${item.href}`} 
+                                  checked={permissions.includes(item.href)}
+                                  onCheckedChange={() => handlePermissionChange(item.href)}
+                                  disabled={isSubmitting}
+                              />
+                              <label
+                                  htmlFor={`perm-${item.href}`}
+                                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                              >
+                                  {item.label}
+                              </label>
+                          </div>
+                      ))}
+                   </div>
+                </div>
+                 <div className="space-y-3 pt-4 border-t">
+                   <Label>Permissões Especiais</Label>
+                   <div className='space-y-2'>
+                      {specialPermissions.map((item) => (
+                          <div key={item.id} className="flex items-center space-x-2">
+                              <Checkbox 
+                                  id={`perm-${item.id}`} 
+                                  checked={permissions.includes(item.id)}
+                                  onCheckedChange={() => handlePermissionChange(item.id)}
+                                  disabled={isSubmitting}
+                              />
+                              <label
+                                  htmlFor={`perm-${item.id}`}
+                                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                              >
+                                  {item.label}
+                              </label>
+                          </div>
+                      ))}
+                   </div>
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="matricula">Matrícula</Label>
-                <Input id="matricula" value={matricula} onChange={(e) => handleMatriculaChange(e.target.value)} placeholder="Matrícula de identificação" disabled={isSubmitting || !!editingUser}/>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">E-mail de Login (automático)</Label>
-                <Input id="email" value={email} readOnly disabled placeholder="Será gerado a partir da matrícula" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="senha">Senha</Label>
-                <Input id="senha" type="password" value={senha} onChange={(e) => setSenha(e.target.value)} placeholder={editingUser ? "Deixe em branco para não alterar" : "Mínimo de 6 caracteres"} disabled={isSubmitting}/>
-              </div>
-              <div className="space-y-3">
-                 <Label>Permissões de Acesso às Páginas</Label>
-                 <div className='space-y-2'>
-                    {navItems.map((item) => (
-                        <div key={item.href} className="flex items-center space-x-2">
-                            <Checkbox 
-                                id={`perm-${item.href}`} 
-                                checked={permissions.includes(item.href)}
-                                onCheckedChange={() => handlePermissionChange(item.href)}
-                                disabled={isSubmitting}
-                            />
-                            <label
-                                htmlFor={`perm-${item.href}`}
-                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                            >
-                                {item.label}
-                            </label>
-                        </div>
-                    ))}
-                 </div>
-              </div>
-               <div className="space-y-3 pt-4 border-t">
-                 <Label>Permissões Especiais</Label>
-                 <div className='space-y-2'>
-                    {specialPermissions.map((item) => (
-                        <div key={item.id} className="flex items-center space-x-2">
-                            <Checkbox 
-                                id={`perm-${item.id}`} 
-                                checked={permissions.includes(item.id)}
-                                onCheckedChange={() => handlePermissionChange(item.id)}
-                                disabled={isSubmitting}
-                            />
-                            <label
-                                htmlFor={`perm-${item.id}`}
-                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                            >
-                                {item.label}
-                            </label>
-                        </div>
-                    ))}
-                 </div>
-              </div>
-            </div>
-            <DialogFooter>
-               <DialogClose asChild>
-                <Button type="button" variant="outline" onClick={resetForm} disabled={isSubmitting}>
-                  Cancelar
+              <DialogFooter>
+                 <DialogClose asChild>
+                  <Button type="button" variant="outline" onClick={resetForm} disabled={isSubmitting}>
+                    Cancelar
+                  </Button>
+                </DialogClose>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {editingUser ? 'Salvar Alterações' : 'Criar Usuário'}
                 </Button>
-              </DialogClose>
-              <Button onClick={handleFormSubmit} disabled={isSubmitting}>
-                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {editingUser ? 'Salvar Alterações' : 'Criar Usuário'}
-              </Button>
-            </DialogFooter>
+              </DialogFooter>
+            </form>
           </DialogContent>
         </Dialog>
       </div>
@@ -400,7 +429,8 @@ export default function UsuariosPage() {
                         <p className="font-semibold flex items-center gap-2"><User className='h-4 w-4 text-primary'/> {user.nome}</p>
                          <p className="text-sm text-muted-foreground flex items-center gap-2"><Mail className='h-4 w-4'/> E-mail: {user.email}</p>
                         <p className="text-sm text-muted-foreground flex items-center gap-2"><KeyRound className='h-4 w-4'/> Matrícula: {user.matricula}</p>
-                        <p className="text-sm text-muted-foreground flex items-center gap-2"><ShieldCheck className='h-4 w-4'/> Permissões: {user.permissions.map(p => getPermissionLabel(p)).join(', ')}</p>
+                        <p className="text-sm text-muted-foreground flex items-center gap-2"><Clock className='h-4 w-4'/> Turno: {user.turno}º</p>
+                        <p className="text-sm text-muted-foreground flex items-center gap-2"><ShieldCheck className='h-4 w-4'/> Permissões: {(user.permissions || []).map(p => getPermissionLabel(p)).join(', ')}</p>
                     </div>
 
                     <AlertDialog>
@@ -428,7 +458,7 @@ export default function UsuariosPage() {
                             <AlertDialogHeader>
                             <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
                             <AlertDialogDescription>
-                                Essa ação não pode ser desfeita. Isso excluirá permanentemente o usuário da base de dados, mas a conta de autenticação precisará ser removida manualmente no console do Firebase.
+                                Essa ação não pode ser desfeita. Isso excluirá permanentemente o usuário da base de dados, mas a conta de autenticação precisará ser removida manually no console do Firebase.
                             </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
@@ -453,3 +483,5 @@ export default function UsuariosPage() {
     </div>
   );
 }
+
+    

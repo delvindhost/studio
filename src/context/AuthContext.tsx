@@ -13,6 +13,7 @@ export interface UserProfile {
   matricula: string;
   role: 'admin' | 'user';
   permissions: string[];
+  turno: '1' | '2' | '3';
 }
 
 interface AuthContextType {
@@ -34,6 +35,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      setLoading(true);
       if (firebaseUser) {
         setUser(firebaseUser);
         const userDocRef = doc(db, 'users', firebaseUser.uid);
@@ -48,7 +50,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 email: 'cq.uia@ind.com.br',
                 matricula: 'admin',
                 role: 'admin',
-                permissions: ['/', '/registrar', '/visualizar', '/graficos', '/usuarios', '/configuracoes', 'delete_records']
+                turno: '1',
+                permissions: ['/', '/registrar', '/visualizar', '/graficos', '/usuarios', '/configuracoes', '/desempenho', 'delete_records']
               };
               await setDoc(userDocRef, adminProfile, { merge: true });
               setUserProfile({ id: firebaseUser.uid, ...adminProfile });
@@ -81,3 +84,5 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 };
 
 export const useAuth = () => useContext(AuthContext);
+
+    
